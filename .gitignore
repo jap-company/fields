@@ -1,0 +1,9 @@
+.bloop
+.bsp
+.idea
+.metals
+.vscode
+project/project
+project/**/metals.sbt
+**/target
+.DS_Store

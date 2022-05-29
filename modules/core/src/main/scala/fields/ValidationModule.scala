@@ -60,7 +60,9 @@ abstract class ValidationModule[F[_], VR[_], E](implicit
       else F.map(b)(bb => VR.or(bb, aa))
     )
 
-  def combineAll(iterable: Iterable[F[VR[E]]]) = iterable.foldLeft(validF)(and)
+  def combineAll(iterable: Iterable[F[VR[E]]]): F[VR[E]] = and(iterable)
+  def and(iterable: Iterable[F[VR[E]]]): F[VR[E]]        = iterable.foldLeft(validF)(and)
+  def or(iterable: Iterable[F[VR[E]]]): F[VR[E]]         = iterable.foldLeft(validF)(or)
 
   type Policy[P]        = ValidationPolicy[P, F, VR, E]
   type PolicyBuilder[P] = ValidationPolicyBuilder[P, F, VR, E]

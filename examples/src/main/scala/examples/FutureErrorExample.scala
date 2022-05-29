@@ -22,8 +22,10 @@ object Email {
   implicit val policy: Policy[Email] = _.map(_.value).matches(EmailRegex)
 }
 
+case class Username(value: String) extends AnyVal
+
 case class RegisterRequest(
-    username: String,
+    username: Username,
     email: Email,
     password: String,
     passwordRepeat: String,
@@ -33,7 +35,7 @@ case class RegisterRequest(
 object RegisterRequest {
   implicit val policy: Policy[RegisterRequest] = Policy
     .builder[RegisterRequest]
-    .subRule(_.username)(
+    .fieldRule(_.sub(_.username).map(_.value))(
       _.min(1),
       _.max(10),
     )
@@ -54,8 +56,10 @@ case class RegisterRequestValidator(userService: UserService) {
       .builder[RegisterRequest]
       // Include default validation
       .rule(RegisterRequest.policy.validate)
-      // Effectful validaton
-      .subRule(_.username)(_.assertF(userService.usernameIsAvailable, _.failPath("Username is not available")))
+      // Effectful validations
+      .fieldRule(_.sub(_.username).map(_.value))(
+        _.assertF(userService.usernameIsAvailable, _.failPath("Username is not available"))
+      )
       .subRule(_.email)(_.assertF(userService.emailIsAvailable, _.failPath("Email is not available")))
       .build
 }
@@ -70,7 +74,8 @@ object FutureErrorExampleApp {
         println(Await.result(res, Duration.Inf).errors.mkString("\n"))
       }
 
-    val request     = RegisterRequest(username = "", email = Email(""), password = "1", passwordRepeat = "2", age = 2)
+    val request     =
+      RegisterRequest(username = Username(""), email = Email(""), password = "1", passwordRepeat = "2", age = 2)
     val requestF    = Field.from(request)
     val userService = new UserService {
       def emailIsAvailable(email: Email)        = Future(false)
@@ -83,13 +88,13 @@ object FutureErrorExampleApp {
     printErrors("Policy", requestF.validate, enabled = true)
 
     // How it looks without using Policy
-    val usernameF       = requestF.sub(_.username)
+    val usernameF       = requestF.sub(_.username).map(_.value)
     val ageF            = requestF.sub(_.age)
     val emailF          = requestF.sub(_.email)
     val passwordF       = requestF.sub(_.password)
     val passwordRepeatF = requestF.sub(_.passwordRepeat)
 
-    val pureValidation = combineAll(
+    val pureValidation =
       List(
         usernameF.min(1),
         usernameF.max(10),
@@ -102,8 +107,7 @@ object FutureErrorExampleApp {
         passwordF === passwordRepeatF,
         emailF.map(_.value).matches(Email.EmailRegex),
         emailF.assertF(userService.emailIsAvailable, _.failPath("Email is not available")),
-      )
-    )
+      ).combineAll
 
     printErrors("Pure", pureValidation, enabled = true)
     println(Divider)

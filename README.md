@@ -17,9 +17,9 @@ To start using this library add this `build.sbt`:
 
 ```scala
 libraryDependencies ++= List(
-    "company.jap" %% "fields-core" % "0.0.1",
-    "company.jap" %% "fields-zio" % "0.0.1",
-    "company.jap" %% "fields-cats" % "0.0.1",
+    "company.jap" %% "fields-core" % "0.0.2",
+    "company.jap" %% "fields-zio" % "0.0.2",
+    "company.jap" %% "fields-cats" % "0.0.2",
 )
 ```
 Core concept of this validation library `Field` structure that stores field path and value and has syntax to create subfields that will carry parents path info.
@@ -77,9 +77,20 @@ Field(path, request.name) //Field(path, request.name) Using path and value
 Field(request.name) //Field(FieldPath.root, request.name) Using value without path
 Field.from(request.name) //Field(FieldPath("request", "name"), request.name) Innherit path from field selects
 
-resuestF.sub(_.name) // Derive subfield using field selector
-resuestF.provideSub("name", request.name) // Manual subfield with provided value
-resuestF.selectSub("name", _.name) // Manual subfield with value selector
+val requestF = Field.from(request)
+requestF.sub(_.name) // Derive subfield using field selector
+requestF.provideSub("name", request.name) // Manual subfield with provided value
+requestF.selectSub("name", _.name) // Manual subfield with value selector
+requestF.map(_.name) //Map only field value
+requestF.mapPath(_.toUpperCase) //Map only field path
+requestF.named("apiRequest")//Changes name of field - last FieldPath part
+requestF.withPath(???)//Set Field path
+requestF.withValue(???)//Set Field value
+requestF.error(???)//Creates FieldError for this field path
+
+val tupleF = Field(1 -> "2")
+tupleF.first//Field(tupleF.path, 1)
+tupleF.second//Field(tupleF.path, "2")
 ```
 
 #### VR\[E] and F\[VR\[E]]
@@ -104,26 +115,22 @@ val request: Request = ???
 val requestF: Field[Request] = Field(request)
 requestF.assertTrue(false, _.invalid)
 requestF.assert(_.isValid, _.invalid)
+requestF.check(c => Accumulate.invalid(c.invalid).whenNot(c.value.isValid))
 
 def isRequestValidApi: zio.Task[Boolean] = ???
 requestF.assertF(isRequestValidApi, _.invalid)
-requestF.check(c => Accumulate.invalid(c.invalid).whenNot(c.value.isValid))
 requestF.checkF(c => isRequestValidApi(c.value).map(Accumulate.whenNot(_)(c.custom("err"))), _.invalid)
-
 requestF === request
 requestF equalTo request
-
 requestF !== request
 requestF notEqualTo request
-
 requestF === requestF
 requestF equalTo requestF
-
 requestF !== requestF
 requestF notEqualTo requestF
-
 requestF in List(request)
-
+requestF.all(_ === request, !== request) // runs all validations and combines them using and
+requestF.any(_ === request, !== request) // runs all validations and combines them using or
 requestF validate //uses ValidationPolicy
 
 //BOOL FIELD
@@ -175,4 +182,28 @@ val mapF: Field[Map[String, Int]] = ???
 mapF.each(_._2 > 3)
 mapF.eachKey(_.nonEmpty)
 mapF.eachValue(_ > 3)
+```
+
+#### Policy
+```scala
+case class Email(value: String) extends AnyVal
+object Email {
+    //Policy is interface with 1 validate method, so you can do so  
+    implicit val policy: Policy[Email] = _.map(_.value).all(_.nonEmpty, _.max(40)) 
+}
+case class Request(name: String, email: Email, age: Int, hasParrot: Boolean)
+
+//Policy.builder simplifies combining validation rules
+implicit val policy: Policy[Request] =
+      Policy
+        .builder[Request]
+        .subRule(_.name)(_.min(4), _.max(48)) //runs all validations combining using and
+        .subRule(_.email)(_.validate) //Reuse Email Policy
+        .subRule2(_.age, _.hasParrot)((age, hasParrot) => age > 48 || (age > 22 && hasParrot.isTrue)) //2 fields rule
+        .build
+
+
+val request: Request = ???
+val requestF = Field.from(request)
+requestF.validate // This will use implicit policy to validate
 ```

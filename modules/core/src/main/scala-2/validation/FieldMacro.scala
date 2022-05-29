@@ -47,13 +47,14 @@ object FieldMacro {
   )(selector: c.Expr[P => S])(rules: c.Tree*): c.Tree = {
     import c.universe._
     val q"$_.$_[..$_]($builder)" = c.prefix.tree
-    q"""$builder.rule(f => $builder.M.combineAll(List(..$rules).map(_.apply(f.sub($selector)))))"""
+    q"$builder.fieldRule(_.sub($selector))(..$rules)"
   }
+
   def policySubRule2Macro[P, S1, S2, F[_], VR[_], E](
       c: blackbox.Context
   )(selector1: c.Expr[P => S1], selector2: c.Expr[P => S2])(rules: c.Tree*): c.Tree = {
     import c.universe._
     val q"$_.$_[..$_]($builder)" = c.prefix.tree
-    q"""$builder.rule(f => $builder.M.combineAll(List(..$rules).map(_.apply(f.sub($selector1), f.sub($selector2)))))"""
+    q"$builder.fieldRule2(_.sub($selector1), _.sub($selector2))(..$rules)"
   }
 }

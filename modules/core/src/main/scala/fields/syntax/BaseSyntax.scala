@@ -55,5 +55,11 @@ final class FieldOps[P, F[_], VR[_], E](private val field: Field[P]) extends Any
   def in(seq: Seq[P])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
     assert(seq.contains, _.oneOf(seq.map(_.toString)))
 
+  def all(f: Field[P] => F[VR[E]]*)(implicit M: ValidationModule[F, VR, E]) =
+    M.and(f.map(_.apply(field)))
+
+  def any(f: Field[P] => F[VR[E]]*)(implicit M: ValidationModule[F, VR, E]) =
+    M.or(f.map(_.apply(field)))
+
   def validate(implicit M: ValidationModule[F, VR, E], P: ValidationPolicy[P, F, VR, E]): F[VR[E]] = P.validate(field)
 }

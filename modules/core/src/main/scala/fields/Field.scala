@@ -1,6 +1,5 @@
 package jap.fields
 
-import scala.annotation.implicitNotFound
 import scala.concurrent.Future
 import scala.language.experimental.macros
 import scala.util.Try
@@ -20,7 +19,6 @@ final case class Field[+P](
   def withValue[V](newValue: V): Field[V]          = Field(path, newValue)
   def map[B](f: P => B): Field[B]                  = withValue(f(value))
   def mapPath(f: FieldPath => FieldPath): Field[P] = withPath(f(this.path))
-  def error[E](error: E): FieldError[E]            = FieldError[E](path, error)
 
   // Tuple Ops
   def first[P1, P2](implicit ev: P <:< (P1, P2)): Field[P1]  = map(ev(_)._1)

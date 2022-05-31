@@ -12,6 +12,9 @@ trait ValidationEffect[F[_]] {
 }
 
 object ValidationEffect {
+
+  /** Sync ValidationEffect. Short-circuit wont work with it.
+    */
   type Id[A] = A
 
   def apply[F[_]](implicit lm: ValidationEffect[F]): ValidationEffect[F] = lm
@@ -27,6 +30,8 @@ object ValidationEffect {
   object future {
     implicit def toFutureInstance(implicit ec: ExecutionContext): FutureInstance = new FutureInstance
 
+    /** Future ValidationEffect. Sadly Future is not lazy so short-circuit wont work with it, too.
+      */
     class FutureInstance(implicit ec: ExecutionContext) extends ValidationEffect[Future] {
       def pure[A](a: A): Future[A]                                   = Future.successful(a)
       def flatMap[A, B](fa: Future[A])(f: A => Future[B]): Future[B] = fa.flatMap(f)

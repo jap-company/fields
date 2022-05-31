@@ -8,22 +8,70 @@ trait NumericSyntax[F[_], VR[_], E] { M: ValidationModule[F, VR, E] =>
 }
 
 final class NumericFieldOps[P, F[_], VR[_], E](private val field: Field[P]) extends AnyVal {
-  def >=(p: P)(implicit M: ValidationModule[F, VR, E], N: Numeric[P]): F[VR[E]]  = gte(p)
-  def gte(p: P)(implicit M: ValidationModule[F, VR, E], N: Numeric[P]): F[VR[E]] =
-    M.assert[P](field, N.gteq(_, p), _.greaterEqual(p.toString))
+  def >=[C](p: C)(implicit
+      M: ValidationModule[F, VR, E],
+      N: Numeric[P],
+      CF: CanFailCompare[E],
+      C: FieldCompare[P, C],
+  ): F[VR[E]] =
+    gte(p)
 
-  def >(p: P)(implicit M: ValidationModule[F, VR, E], N: Numeric[P]): F[VR[E]]  = gt(p)
-  def gt(p: P)(implicit M: ValidationModule[F, VR, E], N: Numeric[P]): F[VR[E]] =
-    M.assert[P](field, N.gt(_, p), _.greater(p.toString))
+  def gte[C](p: C)(implicit
+      M: ValidationModule[F, VR, E],
+      N: Numeric[P],
+      CF: CanFailCompare[E],
+      C: FieldCompare[P, C],
+  ): F[VR[E]] =
+    M.assert[P](field, N.gteq(_, C.value(p)), CF.greaterEqual(p))
 
-  def <=(p: P)(implicit M: ValidationModule[F, VR, E], N: Numeric[P]): F[VR[E]]  = lte(p)
-  def lte(p: P)(implicit M: ValidationModule[F, VR, E], N: Numeric[P]): F[VR[E]] =
-    M.assert[P](field, N.lteq(_, p), _.lessEqual(p.toString))
+  def >[C](p: C)(implicit
+      M: ValidationModule[F, VR, E],
+      N: Numeric[P],
+      CF: CanFailCompare[E],
+      C: FieldCompare[P, C],
+  ): F[VR[E]] = gt(p)
 
-  def <(p: P)(implicit M: ValidationModule[F, VR, E], N: Numeric[P]): F[VR[E]]  = lt(p)
-  def lt(p: P)(implicit M: ValidationModule[F, VR, E], N: Numeric[P]): F[VR[E]] =
-    M.assert[P](field, N.lt(_, p), _.less(p.toString))
+  def gt[C](p: C)(implicit
+      M: ValidationModule[F, VR, E],
+      N: Numeric[P],
+      CF: CanFailCompare[E],
+      C: FieldCompare[P, C],
+  ): F[VR[E]] =
+    M.assert[P](field, N.gt(_, C.value(p)), CF.greater(p))
 
-  def isBetween(from: P, to: P)(implicit M: ValidationModule[F, VR, E], N: Numeric[P]): F[VR[E]] =
+  def <=[C](p: C)(implicit
+      M: ValidationModule[F, VR, E],
+      N: Numeric[P],
+      CF: CanFailCompare[E],
+      C: FieldCompare[P, C],
+  ): F[VR[E]] = lte(p)
+
+  def lte[C](p: C)(implicit
+      M: ValidationModule[F, VR, E],
+      N: Numeric[P],
+      CF: CanFailCompare[E],
+      C: FieldCompare[P, C],
+  ): F[VR[E]] =
+    M.assert[P](field, N.lteq(_, C.value(p)), CF.lessEqual(p))
+
+  def <[C](p: C)(implicit
+      M: ValidationModule[F, VR, E],
+      N: Numeric[P],
+      CF: CanFailCompare[E],
+      C: FieldCompare[P, C],
+  ): F[VR[E]] = lt(p)
+  def lt[C](p: C)(implicit
+      M: ValidationModule[F, VR, E],
+      N: Numeric[P],
+      CF: CanFailCompare[E],
+      C: FieldCompare[P, C],
+  ): F[VR[E]] =
+    M.assert[P](field, N.lt(_, C.value(p)), CF.less(p))
+
+  def isBetween(from: P, to: P)(implicit
+      M: ValidationModule[F, VR, E],
+      N: Numeric[P],
+      CF: CanFailCompare[E],
+  ): F[VR[E]] =
     M.and(gte(from), lte(to))
 }

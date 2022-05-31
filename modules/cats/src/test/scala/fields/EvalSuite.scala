@@ -1,13 +1,17 @@
 package jap.fields
 
+import cats._
+import cats.data._
+
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
 import ValidationError._
 import ValidationResult._
 import CatsInterop._
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-import cats._
+import CanFail._
 
-object EvalValidationModule extends FailFastValidationModule[Eval, FieldError[ValidationError]]
+object EvalValidationModule extends FailFastVM[Eval, FieldError[ValidationError]]
 import EvalValidationModule._
 
 class EvalSuite extends munit.FunSuite {
@@ -21,9 +25,9 @@ class EvalSuite extends munit.FunSuite {
 
   test("FailFast.one") {
     val field = Field(FieldPath.root, 12)
-    val vr    = field.assert(init(field)(_) > 10, _.minSize(10))
+    val vr    = field.assert(init(field)(_) > 10, _.minSizeError(10))
     assertEquals(inited.toList.length, 0)
-    assertEquals(vr.value, FailFast.valid)
+    assertEquals(vr.value, VR.valid)
     assertEquals(inited.toList.length, 1)
   }
 
@@ -32,7 +36,7 @@ class EvalSuite extends munit.FunSuite {
       (0 to 100)
         .map { i =>
           val field = Field(i.toString, 10)
-          field.assert(init(field)(_) > i, _.minSize(10))
+          field.assert(init(field)(_) > i, _.minSizeError(10))
         }
         .combineAll
         .memoize

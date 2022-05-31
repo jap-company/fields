@@ -17,9 +17,9 @@ To start using this library add this `build.sbt`:
 
 ```scala
 libraryDependencies ++= List(
-    "company.jap" %% "fields-core" % "0.0.2",
-    "company.jap" %% "fields-zio" % "0.0.2",
-    "company.jap" %% "fields-cats" % "0.0.2",
+    "company.jap" %% "fields-core" % "0.1.1",
+    "company.jap" %% "fields-zio" % "0.1.1",
+    "company.jap" %% "fields-cats" % "0.1.1",
 )
 ```
 Core concept of this validation library `Field` structure that stores field path and value and has syntax to create subfields that will carry parents path info.
@@ -96,7 +96,7 @@ tupleF.second//Field(tupleF.path, "2")
 #### VR\[E] and F\[VR\[E]]
 ```scala
 val vr1 = nameF.nonEmpty
-val vr2    surnameF.nonEmpty
+val vr2 = surnameF.nonEmpty
 vr1.isValid
 vr1.isInvalid
 vr1.errors // list of errors
@@ -113,13 +113,13 @@ combineAll(List(vr1, vr2)) //combine all using and
 //ANY FIELD
 val request: Request = ???
 val requestF: Field[Request] = Field(request)
-requestF.assertTrue(false, _.invalid)
-requestF.assert(_.isValid, _.invalid)
-requestF.check(c => Accumulate.invalid(c.invalid).whenNot(c.value.isValid))
+requestF.assertTrue(false, _.invalidError)
+requestF.assert(_.isValid, _.invalidError)
+requestF.check(f => Accumulate.invalid(f.invalidError).unless(f.value.isValid))
 
 def isRequestValidApi: zio.Task[Boolean] = ???
 requestF.assertF(isRequestValidApi, _.invalid)
-requestF.checkF(c => isRequestValidApi(c.value).map(Accumulate.whenNot(_)(c.custom("err"))), _.invalid)
+requestF.checkF(f => isRequestValidApi(f.value).map(Accumulate.unless(_)(c.custom("err"))))
 requestF === request
 requestF equalTo request
 requestF !== request
@@ -131,6 +131,8 @@ requestF notEqualTo requestF
 requestF in List(request)
 requestF.all(_ === request, !== request) // runs all validations and combines them using and
 requestF.any(_ === request, !== request) // runs all validations and combines them using or
+requestF.when(true)(_ === request) // runs if cond is true
+requestF.unless(false)(_ === request) // runs if cond is false
 requestF validate //uses ValidationPolicy
 
 //BOOL FIELD

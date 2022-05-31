@@ -12,8 +12,9 @@ import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test.environment._
 
-object TaskValidationModule extends FailFastValidationModule[Task, FieldError[ValidationError]]
+object TaskValidationModule extends FailFastVM[Task, FieldError[ValidationError]]
 import TaskValidationModule.{assert => _, assertTrue => _, _}
+
 object ZioTaskSuite         extends DefaultRunnableSpec {
   def init[A](path: FieldPath)(a: A)(implicit inited: ListBuffer[FieldPath]): A = {
     inited.append(path)
@@ -26,7 +27,7 @@ object ZioTaskSuite         extends DefaultRunnableSpec {
         implicit val inited: ListBuffer[FieldPath] = new ListBuffer[FieldPath]
 
         val field = Field(FieldPath.root, 12)
-        val vr    = field.assert(init(field)(_) > 10, _.minSize(10))
+        val vr    = field.assert(init(field)(_) > 10, _.minSizeError(10))
 
         val beforeRun = inited.toList.length
 
@@ -42,7 +43,7 @@ object ZioTaskSuite         extends DefaultRunnableSpec {
         val vrMemo = (0 to 100)
           .map { i =>
             val field = Field(i.toString, 10)
-            field.assert(init(field)(_) > i, _.minSize(10))
+            field.assert(init(field)(_) > i, _.minSizeError(10))
           }
           .combineAll
           .memoize

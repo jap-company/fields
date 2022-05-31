@@ -9,10 +9,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-import Common._
+import CanFail._
 import ValidationEffect.future._
 
-object FutureValidationModule extends AccumulateValidationModule[Future, FieldError[String]]
+// object FutureValidationModule extends AccumulateVM[Future, FieldError[ValidationError]]
+object FutureValidationModule extends AccumulateVM[Future, FieldError[String]]
+// object FutureValidationModule extends AccumulateVM[Future, FieldError[ValidationError.Message]]
 import FutureValidationModule._
 
 case class Email(value: String) extends AnyVal
@@ -58,9 +60,9 @@ case class RegisterRequestValidator(userService: UserService) {
       .rule(RegisterRequest.policy.validate)
       // Effectful validations
       .fieldRule(_.sub(_.username).map(_.value))(
-        _.assertF(userService.usernameIsAvailable, _.failPath("Username is not available"))
+        _.assertF(userService.usernameIsAvailable, _.messageError("Username is not available"))
       )
-      .subRule(_.email)(_.assertF(userService.emailIsAvailable, _.failPath("Email is not available")))
+      .subRule(_.email)(_.assertF(userService.emailIsAvailable, _.messageError("Email is not available")))
       .build
 }
 
@@ -68,7 +70,7 @@ object FutureErrorExampleApp {
   final def main(args: Array[String]) = {
     def Divider                   = "---------------"
     def await[T](f: Future[T]): T = Await.result(f, Duration.Inf)
-    def printErrors(title: String, res: Future[Accumulate[FieldError[String]]], enabled: Boolean) =
+    def printErrors[VR[_]: ValidationResult, E](title: String, res: Future[VR[E]], enabled: Boolean) =
       if (enabled) {
         println(Divider + title + Divider)
         println(Await.result(res, Duration.Inf).errors.mkString("\n"))
@@ -76,7 +78,6 @@ object FutureErrorExampleApp {
 
     val request     =
       RegisterRequest(username = Username(""), email = Email(""), password = "1", passwordRepeat = "2", age = 2)
-    val requestF    = Field.from(request)
     val userService = new UserService {
       def emailIsAvailable(email: Email)        = Future(false)
       def usernameIsAvailable(username: String) = Future(false)
@@ -85,9 +86,8 @@ object FutureErrorExampleApp {
     val registerRequestValidator = RegisterRequestValidator(userService)
     import registerRequestValidator.policy
 
-    printErrors("Policy", requestF.validate, enabled = true)
-
     // How it looks without using Policy
+    val requestF        = Field.from(request)
     val usernameF       = requestF.sub(_.username).map(_.value)
     val ageF            = requestF.sub(_.age)
     val emailF          = requestF.sub(_.email)
@@ -98,7 +98,7 @@ object FutureErrorExampleApp {
       List(
         usernameF.min(1),
         usernameF.max(10),
-        usernameF.assertF(userService.usernameIsAvailable, _.failPath("Username is not available")),
+        usernameF.assertF(userService.usernameIsAvailable, _.messageError("Username is not available")),
         ageF >= 18,
         ageF <= 110,
         passwordF.nonEmpty,
@@ -106,9 +106,11 @@ object FutureErrorExampleApp {
         passwordF.max(100),
         passwordF === passwordRepeatF,
         emailF.map(_.value).matches(Email.EmailRegex),
-        emailF.assertF(userService.emailIsAvailable, _.failPath("Email is not available")),
+        emailF.assertF(userService.emailIsAvailable, _.messageError("Email is not available")),
       ).combineAll
 
+    println(await(requestF.validate).errors)
+    printErrors("Policy", requestF.validate, enabled = true)
     printErrors("Pure", pureValidation, enabled = true)
     println(Divider)
   }

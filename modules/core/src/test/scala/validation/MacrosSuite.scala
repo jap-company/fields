@@ -1,7 +1,7 @@
 package jap.fields
 
 import ValidationError._
-import DefaultAccumulateValidationModule._
+import DefaultAccumulateVM._
 import ValidationResult._
 
 class MacrosSuite extends munit.FunSuite {
@@ -45,7 +45,7 @@ class MacrosSuite extends munit.FunSuite {
 
     assertEquals(
       policy.validate(dataF).errors,
-      stringF.error[ValidationError](Empty) :: Nil,
+      stringF.emptyError :: Nil,
     )
   }
   test("Policy.subRule2") {
@@ -60,7 +60,7 @@ class MacrosSuite extends munit.FunSuite {
 
     assertEquals(
       dataF.validate.errors,
-      dataF.sub(_.int).error[ValidationError](NotEqual(dataF.sub(_.nested.deep.int).fullPath)) :: Nil,
+      dataF.sub(_.int).notEqualError(dataF.sub(_.nested.deep.int)) :: Nil,
     )
   }
 }

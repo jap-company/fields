@@ -17,7 +17,7 @@ case class ValidationPolicyBuilder[P, F[_], VR[_], E](rules: List[Field[P] => F[
   def fieldRule[S](sub: Field[P] => Field[S])(rules: Field[S] => F[VR[E]]*) =
     rule { f =>
       val subField = sub(f)
-      M.combineAll(rules.map(_.apply(subField)))
+      M.combineAll(rules.map(_.apply(subField)).toList)
     }
 
   def fieldRule2[S1, S2](
@@ -29,7 +29,7 @@ case class ValidationPolicyBuilder[P, F[_], VR[_], E](rules: List[Field[P] => F[
     rule { f =>
       val subField1 = sub1(f)
       val subField2 = sub2(f)
-      M.combineAll(rules.map(_.apply(subField1, subField2)))
+      M.combineAll(rules.map(_.apply(subField1, subField2)).toList)
     }
 
   def validate(field: Field[P]): F[VR[E]] =

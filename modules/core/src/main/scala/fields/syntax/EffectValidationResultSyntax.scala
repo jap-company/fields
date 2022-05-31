@@ -18,7 +18,7 @@ trait EffectValidationResultSyntax[F[_], VR[_], E] { M: ValidationModule[F, VR, 
 final class EffectValidationResultSequenceOps[F[_], VR[_], E](
     private val iterable: Iterable[F[VR[E]]]
 ) extends AnyVal {
-  def combineAll(implicit M: ValidationModule[F, VR, E]): F[VR[E]] = M.combineAll(iterable)
+  def combineAll(implicit M: ValidationModule[F, VR, E]): F[VR[E]] = M.combineAll(iterable.toList)
 }
 
 final class EffectValidationResultOps[F[_], VR[_], E](private val a: F[VR[E]]) extends AnyVal {

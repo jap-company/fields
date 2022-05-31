@@ -1,6 +1,6 @@
 package jap.fields
 
-import DefaultAccumulateValidationModule._
+import DefaultAccumulateVM._
 import ValidationError._
 
 class FieldPathSuite extends munit.FunSuite {

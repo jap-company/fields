@@ -2,6 +2,7 @@ package jap.fields
 
 case class FieldPath(value: List[String]) extends AnyVal {
   def isRoot       = value.isEmpty
+  // ToDo: how to name root? Should it be ""?
   def full: String = if (isRoot) "root" else value.mkString(".")
   def name: String = value.lastOption.getOrElse("root")
 
@@ -17,6 +18,7 @@ object FieldPath {
   def apply(value: String*): FieldPath = FieldPath(value.toList)
   def raw(path: String)                = FieldPath(path.split('.').toList)
 
+  // ToDo: should there be implicit conversions or should this just be factory methods
   implicit def fromString(path: String): FieldPath     = FieldPath(path :: Nil)
   implicit def fromList(path: List[String]): FieldPath = FieldPath(path)
   implicit def fromField[P](f: Field[P]): FieldPath    = f.path

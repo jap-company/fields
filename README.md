@@ -28,17 +28,19 @@ You start by extending ValidationModule and choosing your Effect - F[_], Validat
 // Note: this expects you to have such implicits:
 // ValidationEffect[ValidationEffect.Id]
 // ValidationResult[Accumulate]
-// ValidationErrorMapper[ValidationError]
 object MyValidationModule extends ValidationModule[ValidationEffect.Id, Accumulate, FieldError[ValidationError]]
-object MyValidationModule extends AccumulateValidationModule[ValidationEffect.Id, FieldError[ValidationError]]
-object MyValidationModule extends FailFastValidationModule[ValidationEffect.Id, FieldError[ValidationError]]
+object MyValidationModule extends AccumulateVM[ValidationEffect.Id, FieldError[ValidationError]]
+object MyValidationModule extends FailFastVM[ValidationEffect.Id, FieldError[ValidationError]]
 ```
 There are predefined typeclass instances:
 * ValidationEffect for ValidationEffect.Id(sync), Future, ZIO and Cats Monad/Defer
 * ValidationResult for Accumulate, FailFast, Cats ValidatedNel/ValidatedNeq
-* ValidationErrorMapper for ValidationError and FieldError(requires inner error to implement typeclass)
 
 Important note if you want library to correctly handle short-circuiting you should use lazy ValidationEffect, if you don`t need async validation stick to cats.Eval
+
+All predefined syntax requires your error to have specific CanFail* capabilities those are predefined for ValidationError, ValidationError.Message and String types. 
+For your own error you can choose which mappings you want to implement and use and which not. To handle all CanFail* algebras extend CanFail trait.
+Check jap.fields.ValidationError.CanFailValidationError for example implementation. 
 
 Then you import all from ValidationModule:
 ```scala
@@ -86,7 +88,6 @@ requestF.mapPath(_.toUpperCase) //Map only field path
 requestF.named("apiRequest")//Changes name of field - last FieldPath part
 requestF.withPath(???)//Set Field path
 requestF.withValue(???)//Set Field value
-requestF.error(???)//Creates FieldError for this field path
 
 val tupleF = Field(1 -> "2")
 tupleF.first//Field(tupleF.path, 1)

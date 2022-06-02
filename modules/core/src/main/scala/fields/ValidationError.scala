@@ -1,24 +1,10 @@
 package jap.fields
 
+/** Predefined Error type that carries `error` type and human-readable message */
 sealed trait ValidationError {
   def error: String
   def message: Option[String]
   override def toString = error + message.fold("")(":" + _)
-}
-
-object ValidationErrors {
-  val Invalid      = "invalid"
-  val Empty        = "empty"
-  val NonEmpty     = "non-empty"
-  val Greater      = "greater"
-  val GreaterEqual = "greater-equal"
-  val Less         = "less"
-  val LessEqual    = "less-equal"
-  val Equal        = "equal"
-  val NotEqual     = "not-equal"
-  val MinSize      = "min-size"
-  val MaxSize      = "max-size"
-  val OneOf        = "one-of"
 }
 
 object ValidationError {
@@ -143,4 +129,19 @@ object ValidationError {
       }
     }
   }
+}
+
+object ValidationErrors {
+  val Invalid      = "invalid"
+  val Empty        = "empty"
+  val NonEmpty     = "non-empty"
+  val Greater      = "greater"
+  val GreaterEqual = "greater-equal"
+  val Less         = "less"
+  val LessEqual    = "less-equal"
+  val Equal        = "equal"
+  val NotEqual     = "not-equal"
+  val MinSize      = "min-size"
+  val MaxSize      = "max-size"
+  val OneOf        = "one-of"
 }

@@ -3,6 +3,8 @@ package jap.fields
 import zio._
 
 object ZIOInterop {
+
+  /** ValidationEffect instance for any ZIO */
   implicit def fromZIO[R, E]: ValidationEffect[ZIO[R, E, _]] = new ValidationEffect[ZIO[R, E, _]] {
     def pure[A](a: A): ZIO[R, E, A]                                         = UIO(a)
     def suspend[A](a: => A): ZIO[R, E, A]                                   = UIO(a)

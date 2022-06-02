@@ -1,25 +1,61 @@
 package jap.fields
 
+/** [[jap.fields.FieldPath]] contains path parts of the Field.
+  */
 case class FieldPath(value: List[String]) extends AnyVal {
-  def isRoot       = value.isEmpty
-  // ToDo: how to name root? Should it be ""?
-  def full: String = if (isRoot) "root" else value.mkString(".")
-  def name: String = value.lastOption.getOrElse("root")
 
+  /** Is current path root.
+    */
+  def isRoot = value.isEmpty
+
+  /** Full name of the path is dot-separated parts of this path. For root path this will be "root" (Object of discussion
+    * what this should be)
+    */
+  def full: String = if (isRoot) FieldPath.RootName else value.mkString(".")
+
+  /** Name of the path is the last part of path.
+    */
+  def name: String = value.lastOption.getOrElse(FieldPath.RootName)
+
+  /** Changes name of this path
+    */
   def named(name: String): FieldPath = FieldPath(value.dropRight(1) :+ name)
+
+  /** Append other [[jap.fields.FieldPath]] to current path
+    */
   def ++(path: FieldPath): FieldPath = FieldPath(value ++ path.value)
-  def +(path: String): FieldPath     = FieldPath(value :+ path)
+
+  /** Append other path part to current path
+    */
+  def +(path: String): FieldPath = FieldPath(value :+ path)
 
   override def toString: String = full
 }
 
 object FieldPath {
-  val root                             = FieldPath()
-  def apply(value: String*): FieldPath = FieldPath(value.toList)
-  def raw(path: String)                = FieldPath(path.split('.').toList)
+  val RootName = "root"
 
-  // ToDo: should there be implicit conversions or should this just be factory methods
-  implicit def fromString(path: String): FieldPath     = FieldPath(path :: Nil)
+  /** Root FieldPath
+    */
+  val Root = FieldPath()
+
+  /** Create [[jap.fields.FieldPath]] from `parts`
+    */
+  def apply(parts: String*): FieldPath = FieldPath(parts.toList)
+
+  /** Parse [[jap.fields.FieldPath]] from dot-separated `path` string
+    */
+  def raw(path: String) = FieldPath(path.split('.').toList)
+
+  /** Conversion from [[String]]
+    */
+  implicit def fromString(path: String): FieldPath = FieldPath(path :: Nil)
+
+  /** Conversion from [[List[String]]]
+    */
   implicit def fromList(path: List[String]): FieldPath = FieldPath(path)
-  implicit def fromField[P](f: Field[P]): FieldPath    = f.path
+
+  /** Conversion from [[jap.fields.Field]]
+    */
+  implicit def fromField[P](f: Field[P]): FieldPath = f.path
 }

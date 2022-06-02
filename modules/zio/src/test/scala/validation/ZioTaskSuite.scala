@@ -15,7 +15,7 @@ import zio.test.environment._
 object TaskValidationModule extends FailFastVM[Task, FieldError[ValidationError]]
 import TaskValidationModule.{assert => _, assertTrue => _, _}
 
-object ZioTaskSuite         extends DefaultRunnableSpec {
+object ZioTaskSuite extends DefaultRunnableSpec {
   def init[A](path: FieldPath)(a: A)(implicit inited: ListBuffer[FieldPath]): A = {
     inited.append(path)
     a
@@ -26,7 +26,7 @@ object ZioTaskSuite         extends DefaultRunnableSpec {
       testM("FailFast.one") {
         implicit val inited: ListBuffer[FieldPath] = new ListBuffer[FieldPath]
 
-        val field = Field(FieldPath.root, 12)
+        val field = Field(FieldPath.Root, 12)
         val vr    = field.assert(init(field)(_) > 10, _.minSizeError(10))
 
         val beforeRun = inited.toList.length

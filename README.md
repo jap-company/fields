@@ -17,9 +17,9 @@ To start using this library add this `build.sbt`:
 
 ```scala
 libraryDependencies ++= List(
-    "company.jap" %% "fields-core" % "0.1.1",
-    "company.jap" %% "fields-zio" % "0.1.1",
-    "company.jap" %% "fields-cats" % "0.1.1",
+    "company.jap" %% "fields-core" % "0.1.2",
+    "company.jap" %% "fields-zio" % "0.1.2",
+    "company.jap" %% "fields-cats" % "0.1.2",
 )
 ```
 Core concept of this validation library `Field` structure that stores field path and value and has syntax to create subfields that will carry parents path info.
@@ -56,7 +56,8 @@ val surnameF = requestF.sub(_.surname)
 println(nameF.nonEmpty && surnameF.nonEmpty) // Invalid(List(request.name -> empty, request.name -> empty))
 ```
 
-Now you got the basics of fields, but there is still plenty of syntax to learn that will be described below.
+Now you got the basics of fields, but there is still plenty of syntax to learn that will be described below. 
+Also dont forget to check examples.
 
 ## Syntax
 #### FieldPath

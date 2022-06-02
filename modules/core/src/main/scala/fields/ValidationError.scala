@@ -131,6 +131,7 @@ object ValidationError {
   }
 }
 
+/** This corresponds to `error` field of ValidationError with given names */
 object ValidationErrors {
   val Invalid      = "invalid"
   val Empty        = "empty"

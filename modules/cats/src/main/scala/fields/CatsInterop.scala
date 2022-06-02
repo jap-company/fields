@@ -36,10 +36,10 @@ object CatsInterop {
       override def invalidMany[E](eh: E, et: E*): TypeClass[E]   = Validated.invalid(FNES.fromNes(eh, et))
     }
 
-  /** Base trait for ValidationModule where ValidationResult is Validated[NonEmprtChain[E], Unit] */
+  /** Base trait for ValidationModule where ValidationResult is Validated[NonEmptyChain[E], Unit] */
   abstract class ValidatedNecVM[F[_]: ValidationEffect, E] extends ValidationModule[F, ValidatedNecUnit, E]
 
-  /** Base trait for ValidationModule where ValidationResult is Validated[NonEmprtList[E], Unit] */
+  /** Base trait for ValidationModule where ValidationResult is Validated[NonEmptyList[E], Unit] */
   abstract class ValidatedNelVM[F[_]: ValidationEffect, E] extends ValidationModule[F, ValidatedNelUnit, E]
 
   /** Default ValidationModule where:
@@ -51,7 +51,7 @@ object CatsInterop {
 
   /** Default ValidationModule where:
     *   - ValidationEffect is Id
-    *   - ValidationResult is Validated[NonEmpryChain[E], Unit]
+    *   - ValidationResult is Validated[NonEmptyChain[E], Unit]
     *   - Error is FieldError[ValidationError]
     */
   object DefaultValidatedNecVM extends ValidatedNecVM[ValidationEffect.Id, FieldError[ValidationError]]

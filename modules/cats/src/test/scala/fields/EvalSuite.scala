@@ -24,7 +24,7 @@ class EvalSuite extends munit.FunSuite {
   override def beforeEach(context: BeforeEach): Unit = inited.clear
 
   test("FailFast.one") {
-    val field = Field(FieldPath.root, 12)
+    val field = Field(FieldPath.Root, 12)
     val vr    = field.assert(init(field)(_) > 10, _.minSizeError(10))
     assertEquals(inited.toList.length, 0)
     assertEquals(vr.value, VR.valid)

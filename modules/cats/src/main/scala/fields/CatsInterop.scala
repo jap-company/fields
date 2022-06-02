@@ -8,6 +8,7 @@ object CatsInterop {
   type ValidatedNecUnit[E]  = Validated[NonEmptyChain[E], Unit]
   type ValidatedNelUnit[E]  = Validated[NonEmptyList[E], Unit]
 
+  /** ValidationEffect instance for any F[_] that has [[cats.Monad]] and [[cats.Defer]] instances */
   implicit def fromCatsMonadDefer[F[_]: Monad: Defer]: ValidationEffect[F] = new ValidationEffect[F] {
     def pure[A](a: A): F[A]                         = Monad[F].pure(a)
     def defer[A](a: => F[A]): F[A]                  = Defer[F].defer(a)
@@ -16,6 +17,9 @@ object CatsInterop {
     def map[A, B](fa: F[A])(f: A => B): F[B]        = Monad[F].map(fa)(f)
   }
 
+  /** ValidationResult instance for [[cats.data.Validated]] where error is collection type like
+    * [[cats.data.NonEmptyList]] or [[cats.data.NonEmptyChain]]
+    */
   implicit def fromCatsValidated[L[_]](implicit
       A: Applicative[L],
       SK: SemigroupK[L],
@@ -31,17 +35,33 @@ object CatsInterop {
       def invalid[E](e: E): TypeClass[E]                         = Validated.invalid(A.pure(e))
       override def invalidMany[E](eh: E, et: E*): TypeClass[E]   = Validated.invalid(FNES.fromNes(eh, et))
     }
-    
+
+  /** Base trait for ValidationModule where ValidationResult is Validated[NonEmptyChain[E], Unit] */
   abstract class ValidatedNecVM[F[_]: ValidationEffect, E] extends ValidationModule[F, ValidatedNecUnit, E]
+
+  /** Base trait for ValidationModule where ValidationResult is Validated[NonEmptyList[E], Unit] */
   abstract class ValidatedNelVM[F[_]: ValidationEffect, E] extends ValidationModule[F, ValidatedNelUnit, E]
+
+  /** Default ValidationModule where:
+    *   - ValidationEffect is Id
+    *   - ValidationResult is Validated[NonEmptyList[E], Unit]
+    *   - Error is FieldError[ValidationError]
+    */
   object DefaultValidatedNelVM extends ValidatedNelVM[ValidationEffect.Id, FieldError[ValidationError]]
+
+  /** Default ValidationModule where:
+    *   - ValidationEffect is Id
+    *   - ValidationResult is Validated[NonEmptyChain[E], Unit]
+    *   - Error is FieldError[ValidationError]
+    */
   object DefaultValidatedNecVM extends ValidatedNecVM[ValidationEffect.Id, FieldError[ValidationError]]
 }
 
+/** Typeclass that gives capability to construct collection L[_] from first element `eh` and rest element `et` */
 trait FromNonEmptySeq[L[_]] {
   def fromNes[E](eh: E, et: Seq[E]): L[E]
 }
-object FromNonEmptySeq {
+object FromNonEmptySeq      {
   implicit val necFromList: FromNonEmptySeq[NonEmptyChain] = new FromNonEmptySeq[NonEmptyChain] {
     def fromNes[E](eh: E, et: Seq[E]): NonEmptyChain[E] = NonEmptyChain(eh, et: _*)
   }

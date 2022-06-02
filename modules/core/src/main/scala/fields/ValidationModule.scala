@@ -6,11 +6,30 @@ import syntax._
 import ValidationResult._
 import ValidationEffect.Id
 
-abstract class FailFastVM[F[_]: ValidationEffect, E]   extends ValidationModule[F, FailFast, E]
-abstract class AccumulateVM[F[_]: ValidationEffect, E] extends ValidationModule[F, Accumulate, E]
-object DefaultAccumulateVM                             extends AccumulateVM[Id, FieldError[ValidationError]]
-object DefaultFailFastVM                               extends FailFastVM[Id, FieldError[ValidationError]]
+/** Base trait for ValidationModule where ValidationResult is FailFast */
+abstract class FailFastVM[F[_]: ValidationEffect, E] extends ValidationModule[F, FailFast, E]
 
+/** Base trait for ValidationModule where ValidationResult is Accumulate */
+abstract class AccumulateVM[F[_]: ValidationEffect, E] extends ValidationModule[F, Accumulate, E]
+
+/** Default ValidationModule where:
+  *   - ValidationEffect is Id
+  *   - ValidationResult is Accumulate
+  *   - Error is FieldError[ValidationError]
+  */
+object DefaultAccumulateVM extends AccumulateVM[Id, FieldError[ValidationError]]
+
+/** Default ValidationModule where:
+  *   - ValidationEffect is Id
+  *   - ValidationResult is FailFast
+  *   - Error is FieldError[ValidationError]
+  */
+object DefaultFailFastVM extends FailFastVM[Id, FieldError[ValidationError]]
+
+/** God object that provides all validation syntax for choosen Effect - F[_], ValidationResult - VR[_] and Error - E
+  * Requires user to provide implicit instances of ValidationEffect and ValidationResult typeclasses for choosen F[_]
+  * and VR[_].
+  */
 @implicitNotFound("ValidationModule[${F}, ${VR}, ${E}] not found")
 abstract class ValidationModule[F[_], VR[_], E](implicit
     val F: ValidationEffect[F],
@@ -32,22 +51,29 @@ abstract class ValidationModule[F[_], VR[_], E](implicit
     */
   implicit def Module: ValidationModule[F, VR, E] = this
 
-  def valid: VR[E] = VR.valid[E]
+  /** Valid VR[E] instance */
+  val valid: VR[E] = VR.valid[E]
 
-  def validF: F[VR[E]] = F.pure(valid)
+  /** Valid F[VR[E]] instance */
+  val validF: F[VR[E]] = F.pure(valid)
 
-  def assertTrue[P](field: Field[P], cond: => Boolean, error: Field[P] => E): F[VR[E]] =
+  /** For given field checks that `cond` is true or fail with provided `error` */
+  @inline def assertTrue[P](field: Field[P], cond: => Boolean, error: Field[P] => E): F[VR[E]] =
     F.suspend(if (cond) VR.valid else VR.invalid(error(field)))
 
-  def assert[P](field: Field[P], cond: P => Boolean, error: Field[P] => E): F[VR[E]] =
+  /** For given field checks that `cond` is true or fail with provided `error` */
+  @inline def assert[P](field: Field[P], cond: P => Boolean, error: Field[P] => E): F[VR[E]] =
     assertTrue(field, cond(field.value), error)
 
-  def assertF[P](field: Field[P], cond: P => F[Boolean], error: Field[P] => E): F[VR[E]] =
+  /** For given field checks that `cond` effect result is true or fail with provided `error` */
+  @inline def assertF[P](field: Field[P], cond: P => F[Boolean], error: Field[P] => E): F[VR[E]] =
     F.map(F.defer(cond(field.value)))(if (_) VR.valid else VR.invalid(error(field)))
 
-  def check[P](field: Field[P], f: Field[P] => VR[E]): F[VR[E]] = F.suspend(f(field))
+  /** For given field checks provided `f` validation */
+  @inline def check[P](field: Field[P], f: Field[P] => VR[E]): F[VR[E]] = F.suspend(f(field))
 
-  def checkF[P](field: Field[P], f: Field[P] => F[VR[E]]): F[VR[E]] = F.defer(f(field))
+  /** For given field checks provided effectful `f` validation */
+  @inline def checkF[P](field: Field[P], f: Field[P] => F[VR[E]]): F[VR[E]] = F.defer(f(field))
 
   /** Combines `a` and `b` using AND. Short-circuits if ValidationResult Strategy supports it.
     */

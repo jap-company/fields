@@ -14,7 +14,7 @@ class ValidatedSuite extends munit.FunSuite {
   test("ValidatedNec") {
     import DefaultValidatedNecVM._
 
-    val field = Field(FieldPath.root, 12)
+    val field = Field(FieldPath.Root, 12)
     val vr    = field > 13 && field > 14 && (field > 15 || field === 12)
     assertEquals(
       vr,
@@ -29,7 +29,7 @@ class ValidatedSuite extends munit.FunSuite {
 
   test("ValidatedNel") {
     import DefaultValidatedNelVM._
-    val field = Field(FieldPath.root, 12)
+    val field = Field(FieldPath.Root, 12)
     val vr    = field > 13 && field > 14 && (field > 15 || field === 12)
     assertEquals(
       vr,

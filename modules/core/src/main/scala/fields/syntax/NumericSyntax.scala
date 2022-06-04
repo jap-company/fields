@@ -8,70 +8,75 @@ trait NumericSyntax[F[_], VR[_], E] { M: ValidationModule[F, VR, E] =>
 }
 
 final class NumericFieldOps[P, F[_], VR[_], E](private val field: Field[P]) extends AnyVal {
-  def >=[C](p: C)(implicit
-      M: ValidationModule[F, VR, E],
-      N: Numeric[P],
-      CF: CanFailCompare[E],
-      C: FieldCompare[P, C],
-  ): F[VR[E]] =
-    gte(p)
 
-  def gte[C](p: C)(implicit
+  /** Validates that [[Field]]#value is greater or equal to `compared` */
+  def >=[C](compared: C)(implicit
       M: ValidationModule[F, VR, E],
       N: Numeric[P],
-      CF: CanFailCompare[E],
+      FW: FailWithCompare[E],
       C: FieldCompare[P, C],
-  ): F[VR[E]] =
-    M.assert[P](field, N.gteq(_, C.value(p)), CF.greaterEqual(p))
+  ): F[VR[E]] = gte(compared)
 
-  def >[C](p: C)(implicit
+  /** Validates that [[Field]]#value is greater or equal to `compared` */
+  def gte[C](compared: C)(implicit
       M: ValidationModule[F, VR, E],
       N: Numeric[P],
-      CF: CanFailCompare[E],
+      FW: FailWithCompare[E],
       C: FieldCompare[P, C],
-  ): F[VR[E]] = gt(p)
+  ): F[VR[E]] = M.assert[P](field, N.gteq(_, C.value(compared)), FW.greaterEqual(compared))
 
-  def gt[C](p: C)(implicit
+  /** Validates that [[Field]]#value is greater than `compared` */
+  def >[C](compared: C)(implicit
       M: ValidationModule[F, VR, E],
       N: Numeric[P],
-      CF: CanFailCompare[E],
+      FW: FailWithCompare[E],
       C: FieldCompare[P, C],
-  ): F[VR[E]] =
-    M.assert[P](field, N.gt(_, C.value(p)), CF.greater(p))
+  ): F[VR[E]] = gt(compared)
 
-  def <=[C](p: C)(implicit
+  /** Validates that [[Field]]#value is greater than `compared` */
+  def gt[C](compared: C)(implicit
       M: ValidationModule[F, VR, E],
       N: Numeric[P],
-      CF: CanFailCompare[E],
+      FW: FailWithCompare[E],
       C: FieldCompare[P, C],
-  ): F[VR[E]] = lte(p)
+  ): F[VR[E]] = M.assert[P](field, N.gt(_, C.value(compared)), FW.greater(compared))
 
-  def lte[C](p: C)(implicit
+  /** Validates that [[Field]]#value is less or equal to `compared` */
+  def <=[C](compared: C)(implicit
       M: ValidationModule[F, VR, E],
       N: Numeric[P],
-      CF: CanFailCompare[E],
+      FW: FailWithCompare[E],
       C: FieldCompare[P, C],
-  ): F[VR[E]] =
-    M.assert[P](field, N.lteq(_, C.value(p)), CF.lessEqual(p))
+  ): F[VR[E]] = lte(compared)
 
-  def <[C](p: C)(implicit
+  /** Validates that [[Field]]#value is less or equal to `compared` */
+  def lte[C](compared: C)(implicit
       M: ValidationModule[F, VR, E],
       N: Numeric[P],
-      CF: CanFailCompare[E],
+      FW: FailWithCompare[E],
       C: FieldCompare[P, C],
-  ): F[VR[E]] = lt(p)
-  def lt[C](p: C)(implicit
-      M: ValidationModule[F, VR, E],
-      N: Numeric[P],
-      CF: CanFailCompare[E],
-      C: FieldCompare[P, C],
-  ): F[VR[E]] =
-    M.assert[P](field, N.lt(_, C.value(p)), CF.less(p))
+  ): F[VR[E]] = M.assert[P](field, N.lteq(_, C.value(compared)), FW.lessEqual(compared))
 
+  /** Validates that [[Field]]#value is less than `compared` */
+  def <[C](compared: C)(implicit
+      M: ValidationModule[F, VR, E],
+      N: Numeric[P],
+      FW: FailWithCompare[E],
+      C: FieldCompare[P, C],
+  ): F[VR[E]] = lt(compared)
+
+  /** Validates that [[Field]]#value is less than `compared` */
+  def lt[C](compared: C)(implicit
+      M: ValidationModule[F, VR, E],
+      N: Numeric[P],
+      FW: FailWithCompare[E],
+      C: FieldCompare[P, C],
+  ): F[VR[E]] = M.assert[P](field, N.lt(_, C.value(compared)), FW.less(compared))
+
+  /** Validates that [[Field]]#value is  greaterEqual than `from` and lessEqual `to` */
   def isBetween(from: P, to: P)(implicit
       M: ValidationModule[F, VR, E],
       N: Numeric[P],
-      CF: CanFailCompare[E],
-  ): F[VR[E]] =
-    M.and(gte(from), lte(to))
+      FW: FailWithCompare[E],
+  ): F[VR[E]] = M.and(gte(from), lte(to))
 }

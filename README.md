@@ -17,9 +17,9 @@ To start using this library add this `build.sbt`:
 
 ```scala
 libraryDependencies ++= List(
-    "company.jap" %% "fields-core" % "0.1.2",
-    "company.jap" %% "fields-zio" % "0.1.2",
-    "company.jap" %% "fields-cats" % "0.1.2",
+    "company.jap" %% "fields-core" % "0.2.0",
+    "company.jap" %% "fields-zio" % "0.2.0",
+    "company.jap" %% "fields-cats" % "0.2.0",
 )
 ```
 Core concept of this validation library `Field` structure that stores field path and value and has syntax to create subfields that will carry parents path info.
@@ -38,9 +38,9 @@ There are predefined typeclass instances:
 
 Important note if you want library to correctly handle short-circuiting you should use lazy ValidationEffect, if you don`t need async validation stick to cats.Eval
 
-All predefined syntax requires your error to have specific CanFail* capabilities those are predefined for ValidationError, ValidationError.Message and String types. 
-For your own error you can choose which mappings you want to implement and use and which not. To handle all CanFail* algebras extend CanFail trait.
-Check jap.fields.ValidationError.CanFailValidationError for example implementation. 
+All predefined syntax requires your error to have specific FailWith* capabilities those are predefined for ValidationError, ValidationError.Message and String types. 
+For your own error you can choose which mappings you want to implement and use and which not. To handle all FailWith* algebras extend FailWith trait.
+Check jap.fields.ValidationError.FailWithValidationError for example implementation. 
 
 Then you import all from ValidationModule:
 ```scala

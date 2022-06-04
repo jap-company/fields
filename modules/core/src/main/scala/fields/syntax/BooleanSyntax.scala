@@ -12,9 +12,11 @@ trait BooleanSyntax[F[_], VR[_], E] { M: ValidationModule[F, VR, E] =>
 
 final class BooleanFieldOps[F[_], VR[_], E](private val field: Field[Boolean]) extends AnyVal {
 
-  def isTrue(implicit M: ValidationModule[F, VR, E], CF: CanFailCompare[E]): F[VR[E]] =
-    M.assert[Boolean](field, _ == true, CF.equal(true))
+  /** Validates [[Field]]#value is `true` */
+  def isTrue(implicit M: ValidationModule[F, VR, E], FW: FailWithCompare[E]): F[VR[E]] =
+    M.assert[Boolean](field, _ == true, FW.equal(true))
 
-  def isFalse(implicit M: ValidationModule[F, VR, E], CF: CanFailCompare[E]): F[VR[E]] =
-    M.assert[Boolean](field, _ == false, CF.equal(false))
+  /** Validates [[Field]]#value is `false` */
+  def isFalse(implicit M: ValidationModule[F, VR, E], FW: FailWithCompare[E]): F[VR[E]] =
+    M.assert[Boolean](field, _ == false, FW.equal(false))
 }

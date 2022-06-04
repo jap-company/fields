@@ -2,7 +2,7 @@ package jap.fields
 
 import scala.concurrent._
 
-/** [[jap.fieldsValidationEffect]] is a typeclass that provides ValidationModule with Monad/Defer capabilities. */
+/** [[jap.fields.ValidationEffect]] is a typeclass that provides ValidationModule with Monad/Defer capabilities. */
 trait ValidationEffect[F[_]] {
 
   /** Lifts value into Effect */
@@ -25,13 +25,11 @@ trait ValidationEffect[F[_]] {
 }
 
 object ValidationEffect {
-
-  /** Sync ValidationEffect. Short-circuit wont work with it. */
-  type Id[A] = A
-
   def apply[F[_]](implicit lm: ValidationEffect[F]): ValidationEffect[F] = lm
 
-  implicit object IdInstance extends ValidationEffect[Id] {
+  /** Sync [[jap.fields.ValidationEffect]]. Short-circuit wont work with it. */
+  type Sync[A] = A
+  implicit object SyncInstance extends ValidationEffect[Sync] {
     def pure[A](a: A): A                   = a
     def flatMap[A, B](fa: A)(f: A => B): B = f(fa)
     def map[A, B](fa: A)(f: A => B): B     = f(fa)
@@ -40,9 +38,11 @@ object ValidationEffect {
   }
 
   object future {
+
+    /** Requires implicit [[scala.concurrent.ExecutionContext]] in scope */
     implicit def toFutureInstance(implicit ec: ExecutionContext): FutureInstance = new FutureInstance
 
-    /** Future ValidationEffect. Sadly Future is not lazy so short-circuit wont work with it, too.
+    /** Future [[jap.fields.ValidationEffect]]. Sadly Future is not lazy so short-circuit wont work with it, too.
       */
     class FutureInstance(implicit ec: ExecutionContext) extends ValidationEffect[Future] {
       def pure[A](a: A): Future[A]                                   = Future.successful(a)

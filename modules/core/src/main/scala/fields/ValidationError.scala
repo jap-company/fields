@@ -2,147 +2,160 @@ package jap.fields
 
 /** Predefined Error type that carries `error` type and human-readable message */
 sealed trait ValidationError {
+  def path: FieldPath
   def error: String
   def message: Option[String]
-  override def toString = error + message.fold("")(":" + _)
+  override def toString = s"$path -> ${message.getOrElse(error)}"
 }
+object ValidationError       {
+  case class Invalid(path: FieldPath)  extends ValidationError {
+    val error   = ValidationTypes.Invalid
+    val message = Some(ValidationMessages.Invalid)
+  }
+  case class Empty(path: FieldPath)    extends ValidationError {
+    val error   = ValidationTypes.Empty
+    val message = Some(ValidationMessages.Empty)
+  }
+  case class NonEmpty(path: FieldPath) extends ValidationError {
+    val error   = ValidationTypes.NonEmpty
+    val message = Some(ValidationMessages.NonEmpty)
+  }
 
-object ValidationError {
-  case object Invalid  extends ValidationError {
-    val error   = ValidationErrors.Invalid
-    val message = Some("should be valid")
-  }
-  case object Empty    extends ValidationError {
-    val error   = ValidationErrors.Empty
-    val message = Some("should not be empty")
-  }
-  case object NonEmpty extends ValidationError {
-    val error   = ValidationErrors.NonEmpty
-    val message = Some("should be empty")
+  case class Greater(path: FieldPath, compared: String) extends ValidationError {
+    val error   = ValidationTypes.Greater
+    val message = Some(ValidationMessages.Greater(compared))
   }
 
-  case class Greater(compared: String) extends ValidationError {
-    val error   = ValidationErrors.Greater
-    val message = Some(Greater.message(compared))
+  case class GreaterEqual(path: FieldPath, compared: String) extends ValidationError {
+    val error   = ValidationTypes.GreaterEqual
+    val message = Some(ValidationMessages.GreaterEqual(compared))
   }
-  object Greater { def message(compared: String) = s"should be greater than $compared" }
 
-  case class GreaterEqual(compared: String) extends ValidationError {
-    val error   = ValidationErrors.GreaterEqual
-    val message = Some(GreaterEqual.message(compared))
+  case class Less(path: FieldPath, compared: String) extends ValidationError {
+    val error   = ValidationTypes.Less
+    val message = Some(ValidationMessages.Less(compared))
   }
-  object GreaterEqual { def message(compared: String) = s"should be greater than or equal to $compared" }
 
-  case class Less(compared: String) extends ValidationError {
-    val error   = ValidationErrors.Less
-    val message = Some(Less.message(compared))
+  case class LessEqual(path: FieldPath, compared: String) extends ValidationError {
+    val error   = ValidationTypes.LessEqual
+    val message = Some(ValidationMessages.LessEqual(compared))
   }
-  object Less { def message(compared: String) = s"should be less than $compared" }
 
-  case class LessEqual(compared: String) extends ValidationError {
-    val error   = ValidationErrors.LessEqual
-    val message = Some(LessEqual.message(compared))
+  case class Equal(path: FieldPath, compared: String) extends ValidationError {
+    val error   = ValidationTypes.Equal
+    val message = Some(ValidationMessages.Equal(compared))
   }
-  object LessEqual { def message(compared: String) = s"should be less than or equal to $compared" }
 
-  case class Equal(compared: String) extends ValidationError {
-    val error   = ValidationErrors.Equal
-    val message = Some(Equal.message(compared))
+  case class NotEqual(path: FieldPath, compared: String) extends ValidationError {
+    val error   = ValidationTypes.NotEqual
+    val message = Some(ValidationMessages.NotEqual(compared))
   }
-  object Equal { def message(compared: String) = s"should be $compared" }
 
-  case class NotEqual(compared: String) extends ValidationError {
-    val error   = ValidationErrors.NotEqual
-    val message = Some(NotEqual.message(compared))
+  case class MinSize(path: FieldPath, size: Int) extends ValidationError {
+    val error   = ValidationTypes.MinSize
+    val message = Some(ValidationMessages.MinSize(size))
   }
-  object NotEqual { def message(compared: String) = s"should not be $compared" }
 
-  case class MinSize(size: Int) extends ValidationError {
-    val error   = ValidationErrors.MinSize
-    val message = Some(MinSize.message(size))
+  case class MaxSize(path: FieldPath, size: Int) extends ValidationError {
+    val error   = ValidationTypes.MaxSize
+    val message = Some(ValidationMessages.MaxSize(size))
   }
-  object MinSize { def message(size: Int) = s"min size should be $size" }
 
-  case class MaxSize(size: Int) extends ValidationError {
-    val error   = ValidationErrors.MaxSize
-    val message = Some(MaxSize.message(size))
+  case class OneOf(path: FieldPath, variants: Seq[String]) extends ValidationError {
+    val error   = ValidationTypes.OneOf
+    val message = Some(ValidationMessages.OneOf(variants))
   }
-  object MaxSize { def message(size: Int) = s"max should be $size" }
-
-  case class OneOf(variants: Seq[String]) extends ValidationError {
-    val error   = ValidationErrors.OneOf
-    val message = Some(OneOf.message(variants))
-  }
-  object OneOf { def message(variants: Seq[String]) = s"should be one of ${variants.mkString(",")}" }
 
   /** If you dont need to match on errors and just want to have separate error and user message, use this rather than
     * ValidationError
     */
   case class Message(
+      path: FieldPath,
       error: String,
       message: Option[String] = None,
   ) extends ValidationError
   object Message {
-    implicit object ValidationMessageCanFail extends CanFail[Message] {
-      def invalid[A](field: Field[A]): Message            = Message(ValidationErrors.Invalid, Invalid.message)
-      def empty[A](field: Field[A]): Message              = Message(ValidationErrors.Empty, Empty.message)
-      def nonEmpty[A](field: Field[A]): Message           = Message(ValidationErrors.NonEmpty, NonEmpty.message)
-      def minSize[A](size: Int)(field: Field[A]): Message =
-        Message(ValidationErrors.MinSize, Some(MinSize.message(size)))
-      def maxSize[A](size: Int)(field: Field[A]): Message =
-        Message(ValidationErrors.MaxSize, Some(MaxSize.message(size)))
+    def apply(path: FieldPath, error: String, message: String): Message = Message(path, error, Some(message))
+    implicit object ValidationMessageFailWith extends FailWith[Message] {
+      def invalid[A](field: Field[A]): Message  = Message(field, ValidationTypes.Invalid, ValidationMessages.Invalid)
+      def empty[A](field: Field[A]): Message    = Message(field, ValidationTypes.Empty, ValidationMessages.Empty)
+      def nonEmpty[A](field: Field[A]): Message = Message(field, ValidationTypes.NonEmpty, ValidationMessages.NonEmpty)
+      def minSize[A](size: Int)(field: Field[A]): Message                                     =
+        Message(field, ValidationTypes.MinSize, ValidationMessages.MinSize(size))
+      def maxSize[A](size: Int)(field: Field[A]): Message                                     =
+        Message(field, ValidationTypes.MaxSize, ValidationMessages.MaxSize(size))
       def compare[A](operation: CompareOperation, compared: String)(field: Field[A]): Message =
         operation match {
-          case CompareOperation.Equal    => Message(ValidationErrors.Equal, Some(s"should be equal to $compared"))
-          case CompareOperation.NotEqual =>
-            Message(ValidationErrors.NotEqual, Some(s"should not be equal to $compared"))
-          case CompareOperation.Greater  => Message(ValidationErrors.Greater, Some(s"should be greater than $compared"))
+          case CompareOperation.Equal        =>
+            Message(field, ValidationTypes.Equal, ValidationMessages.Equal(compared))
+          case CompareOperation.NotEqual     =>
+            Message(field, ValidationTypes.NotEqual, ValidationMessages.NotEqual(compared))
+          case CompareOperation.Greater      =>
+            Message(field, ValidationTypes.Greater, ValidationMessages.Greater(compared))
           case CompareOperation.GreaterEqual =>
-            Message(ValidationErrors.GreaterEqual, Some(s"should be greater/equal to $compared"))
-          case CompareOperation.Less         => Message(ValidationErrors.Less, Some(s"should be less than $compared"))
+            Message(field, ValidationTypes.GreaterEqual, ValidationMessages.GreaterEqual(compared))
+          case CompareOperation.Less         =>
+            Message(field, ValidationTypes.Less, ValidationMessages.Less(compared))
           case CompareOperation.LessEqual    =>
-            Message(ValidationErrors.LessEqual, Some(s"should be less/equal $compared"))
+            Message(field, ValidationTypes.LessEqual, ValidationMessages.LessEqual(compared))
         }
       def message[A](error: String, message: Option[String])(field: Field[A]): Message        =
-        Message(error, message)
+        Message(field, error, message)
       def oneOf[A](variants: Seq[A])(field: Field[A]): Message                                =
-        Message(ValidationErrors.OneOf, Some(OneOf.message(variants.map(_.toString))))
+        Message(field, ValidationTypes.OneOf, Some(ValidationMessages.OneOf(variants.map(_.toString))))
     }
   }
 
-  implicit object CanFailValidationError extends CanFail[ValidationError] {
-    def message[A](error: String, message: Option[String])(field: Field[A]): ValidationError = Message(error, message)
-    def invalid[A](field: Field[A]): ValidationError                                         = Invalid
-    def empty[A](field: Field[A]): ValidationError                                           = Empty
-    def nonEmpty[A](field: Field[A]): ValidationError                                        = NonEmpty
-    def minSize[A](size: Int)(field: Field[A]): ValidationError                              = MinSize(size)
-    def maxSize[A](size: Int)(field: Field[A]): ValidationError                              = MaxSize(size)
-    def oneOf[A](variants: Seq[A])(field: Field[A]): ValidationError = OneOf(variants.map(_.toString))
+  implicit object FailWithValidationError extends FailWith[ValidationError] {
+    def invalid[A](field: Field[A]): ValidationError                 = Invalid(field)
+    def empty[A](field: Field[A]): ValidationError                   = Empty(field)
+    def nonEmpty[A](field: Field[A]): ValidationError                = NonEmpty(field)
+    def minSize[A](size: Int)(field: Field[A]): ValidationError      = MinSize(field, size)
+    def maxSize[A](size: Int)(field: Field[A]): ValidationError      = MaxSize(field, size)
+    def oneOf[A](variants: Seq[A])(field: Field[A]): ValidationError = OneOf(field, variants.map(_.toString))
+    def message[A](error: String, message: Option[String])(field: Field[A]): ValidationError        =
+      Message(field, error, message)
     def compare[A](operation: CompareOperation, compared: String)(field: Field[A]): ValidationError = {
       operation match {
-        case CompareOperation.Equal        => Equal(compared)
-        case CompareOperation.NotEqual     => NotEqual(compared)
-        case CompareOperation.Greater      => Greater(compared)
-        case CompareOperation.GreaterEqual => GreaterEqual(compared)
-        case CompareOperation.Less         => Less(compared)
-        case CompareOperation.LessEqual    => LessEqual(compared)
+        case CompareOperation.Equal        => Equal(field, compared)
+        case CompareOperation.NotEqual     => NotEqual(field, compared)
+        case CompareOperation.Greater      => Greater(field, compared)
+        case CompareOperation.GreaterEqual => GreaterEqual(field, compared)
+        case CompareOperation.Less         => Less(field, compared)
+        case CompareOperation.LessEqual    => LessEqual(field, compared)
       }
     }
   }
 }
 
 /** This corresponds to `error` field of ValidationError with given names */
-object ValidationErrors {
-  val Invalid      = "invalid"
-  val Empty        = "empty"
-  val NonEmpty     = "non-empty"
-  val Greater      = "greater"
-  val GreaterEqual = "greater-equal"
-  val Less         = "less"
-  val LessEqual    = "less-equal"
-  val Equal        = "equal"
-  val NotEqual     = "not-equal"
-  val MinSize      = "min-size"
-  val MaxSize      = "max-size"
-  val OneOf        = "one-of"
+object ValidationTypes {
+  val Invalid      = "INVALID_ERROR"
+  val Empty        = "EMPTY_ERROR"
+  val NonEmpty     = "NON_EMPTY_ERROR"
+  val Greater      = "GREATER_ERROR"
+  val GreaterEqual = "GREATER_EQUAL_ERROR"
+  val Less         = "LESS_ERROR"
+  val LessEqual    = "LESS_EQUAL_ERROR"
+  val Equal        = "EQUAL_ERROR"
+  val NotEqual     = "NOT_EQUAL_ERROR"
+  val MinSize      = "MIN_SIZE_ERROR"
+  val MaxSize      = "MAX_SIZE_ERROR"
+  val OneOf        = "ONE_OF_ERROR"
+}
+
+/** ValidationError error messages */
+object ValidationMessages {
+  val Invalid                        = s"should be valid"
+  val NonEmpty                       = s"should not be empty"
+  val Empty                          = s"should be empty"
+  def Greater(compared: String)      = s"should be greater than $compared"
+  def GreaterEqual(compared: String) = s"should be greater than or equal to $compared"
+  def Less(compared: String)         = s"should be less than $compared"
+  def LessEqual(compared: String)    = s"should be less than or equal to $compared"
+  def Equal(compared: String)        = s"should be equal to $compared"
+  def NotEqual(compared: String)     = s"should not be equal to $compared"
+  def MinSize(size: Int)             = s"min size should be $size"
+  def MaxSize(size: Int)             = s"max size should be $size"
+  def OneOf(variants: Seq[String])   = s"should be one of ${variants.mkString(",")}"
 }

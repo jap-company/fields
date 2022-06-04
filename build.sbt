@@ -89,9 +89,10 @@ lazy val `fields-zio` =
 lazy val examples =
   (project in file("examples"))
     .settings(
-      scalaVersion    := editorScala,
-      publishArtifact := false,
+      scalaVersion                           := editorScala,
+      publishArtifact                        := false,
+      libraryDependencies += "org.typelevel" %% "cats-effect" % "2.5.5",
     )
-    .dependsOn(`fields-core`)
+    .dependsOn(`fields-core`, `fields-zio`, `fields-cats`)
 
 Global / excludeLintKeys ++= Set(ThisBuild / idePackagePrefix)

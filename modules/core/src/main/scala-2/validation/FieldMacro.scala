@@ -8,12 +8,11 @@ object FieldMacro {
     import c.universe._
 
     def selectorPath(tree: Tree): List[String] = tree match {
-      case Apply(Select(rest, TermName("apply")), List(Literal(Constant(index)))) =>
-        selectorPath(rest) :+ index.toString
-      case Apply(Select(rest, TermName("apply")), List(Literal(Constant(key))))   => selectorPath(rest) :+ key.toString
-      case Select(rest, name: TermName)                                           => selectorPath(rest) :+ name.toString
-      case Ident(TermName(name))                                                  => List(name)
-      case This(_)                                                                => Nil
+      case Apply(Select(rest, TermName("apply")), List(Literal(Constant(name)))) => selectorPath(rest) :+ name.toString
+      case Apply(Select(rest, TermName("apply")), List(Literal(Constant(name)))) => selectorPath(rest) :+ name.toString
+      case Select(rest, name: TermName)                                          => selectorPath(rest) :+ name.toString
+      case Ident(TermName(name))                                                 => List(name)
+      case This(_)                                                               => Nil
       case got => c.abort(c.enclosingPosition, "Field.from only support variables or variable selector")
     }
 
@@ -25,12 +24,11 @@ object FieldMacro {
   def subMacro[P, S](c: blackbox.Context)(selector: c.Expr[P => S]): c.Expr[Field[S]] = {
     import c.universe._
     def selectorPath(tree: Tree): List[String] = tree match {
-      case Apply(Select(rest, TermName("apply")), List(Literal(Constant(index)))) =>
-        selectorPath(rest) :+ index.toString
-      case Apply(Select(rest, TermName("apply")), List(Literal(Constant(key))))   => selectorPath(rest) :+ key.toString
-      case Select(rest, name: TermName)                                           => selectorPath(rest) :+ name.toString
-      case Ident(TermName(name))                                                  => Nil
-      case This(_)                                                                => Nil
+      case Apply(Select(rest, TermName("apply")), List(Literal(Constant(name)))) => selectorPath(rest) :+ name.toString
+      case Apply(Select(rest, TermName("apply")), List(Literal(Constant(name)))) => selectorPath(rest) :+ name.toString
+      case Select(rest, name: TermName)                                          => selectorPath(rest) :+ name.toString
+      case Ident(TermName(name))                                                 => Nil
+      case This(_)                                                               => Nil
       case got => c.abort(c.enclosingPosition, "Function is not chain of transformations")
     }
 

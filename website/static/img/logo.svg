@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="99.964 99.964 600.036 600.036" width="250px" height="250px" xmlns="http://www.w3.org/2000/svg" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <bx:grid x="0" y="0" width="50" height="50"/>
+  </defs>
+  <g transform="matrix(1, 0, 0, 1, -0.018, -50.018002)">
+    <title>Logo</title>
+    <line style="stroke: rgb(244, 96, 55); stroke-linecap: round; stroke-width: 32px;" x1="200" y1="300" x2="350" y2="450"/>
+    <line style="stroke: rgb(244, 96, 55); stroke-linecap: round; stroke-width: 32px;" x1="200" y1="600" x2="350" y2="450"/>
+    <line style="stroke: rgb(244, 96, 55); stroke-linecap: round; stroke-width: 32px;" x1="300" y1="600" x2="400" y2="500"/>
+    <line style="stroke: rgb(244, 96, 55); stroke-linecap: round; stroke-width: 32px;" x1="500" y1="600" x2="400" y2="500"/>
+    <line style="stroke: rgb(244, 96, 55); stroke-linecap: round; stroke-width: 32px;" x1="600" y1="600" x2="300" y2="300"/>
+    <line style="stroke: rgb(244, 96, 55); stroke-linecap: round; stroke-width: 32px;" x1="300" y1="300" x2="600" y2="300"/>
+    <line style="stroke: rgb(244, 96, 55); stroke-linecap: round; stroke-width: 32px;" x1="600" y1="300" x2="450" y2="450"/>
+  </g>
+</svg>

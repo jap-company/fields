@@ -1,0 +1,56 @@
+.homeContainer {
+  text-align: center;
+  padding-top: 25px;
+}
+
+.mainContainer {
+  flex: 1 1 0%;
+  max-width: 100%;
+  padding: 50px 0;
+}
+
+.badges {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.badges > a {
+  margin: 0 3px;
+}
+
+.index {
+  margin: 0 auto;
+  max-width: 650px;
+  padding: 0 10px;
+}
+
+.projectTitle {
+  color: #122932;
+  margin: 0.3em 0;
+  font-size: 300%;
+  line-height: 1em;
+}
+
+.projectTitleLogo {
+  width: 80px;
+  vertical-align: top;
+}
+
+.projectName {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.projectTitle > small {
+  display: block;
+  font-weight: 400;
+  font-size: 50%;
+  line-height: 1em;
+  margin: 0.4em 0 1.3em;
+}
+
+.quicklinks > a {
+  margin: 0 3px;
+}

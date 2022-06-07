@@ -2,7 +2,7 @@
 
 | Scaladex                           | Maven                        | CI                     | Telegram                           | Scaladoc                           |
 | ---------------------------------- | ---------------------------- | ---------------------- | ---------------------------------- | ---------------------------------- |
-| [![badge-scaladex]][link-scaladex] | [![badge-maven]](link-maven) | [![badge-ci]](link-ci) | [![badge-telegram]][link-telegram] | [![badge-scaladoc]][link-scaladoc] |
+| [![badge-scaladex]][link-scaladex] | [![badge-maven]][link-maven] | [![badge-ci]][link-ci] | [![badge-telegram]][link-telegram] | [![badge-scaladoc]][link-scaladoc] |
 
 # Fields
 

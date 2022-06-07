@@ -8,7 +8,7 @@ object FieldMacro:
     import quotes.reflect.*
     Literal(StringConstant(value)).asExprOf[String]
 
-  def fromImpl[P](value: Expr[P])(using Type[P], Quotes) =
+  def fromImpl[P](value: Expr[P], includeIdent: Boolean)(using Type[P], Quotes) =
     import quotes.reflect.*
 
     // Recursively extracts names from call chain
@@ -17,7 +17,7 @@ object FieldMacro:
       case Apply(Select(rest, "apply"), List(Literal(StringConstant(key)))) => extractNames(rest) :+ key
       case Inlined(_, _, term)                                              => extractNames(term)
       case Select(rest, name)                                               => extractNames(rest) :+ name.toString
-      case Ident(name)                                                      => List(name)
+      case Ident(name)                                                      => if (includeIdent) List(name) else Nil
       case unmatched => report.throwError("Pass a variable/selector like request or request.password")
 
     // report.info(value.asTerm.show(using Printer.TreeStructure))

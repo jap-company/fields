@@ -4,6 +4,23 @@ import scala.reflect.macros.blackbox.Context
 import scala.reflect.macros.blackbox
 
 object FieldMacro {
+  def fromSubMacro[A: c.WeakTypeTag](c: blackbox.Context)(value: c.Expr[A]): c.Expr[Field[A]] = {
+    import c.universe._
+
+    def selectorPath(tree: Tree): List[String] = tree match {
+      case Apply(Select(rest, TermName("apply")), List(Literal(Constant(name)))) => selectorPath(rest) :+ name.toString
+      case Apply(Select(rest, TermName("apply")), List(Literal(Constant(name)))) => selectorPath(rest) :+ name.toString
+      case Select(rest, name: TermName)                                          => selectorPath(rest) :+ name.toString
+      case Ident(TermName(_))                                                    => Nil
+      case This(_)                                                               => Nil
+      case got => c.abort(c.enclosingPosition, "Field.from only support variable selector")
+    }
+
+    // c.info(c.enclosingPosition, showRaw(value.tree), true)
+    val path = q"jap.fields.FieldPath(${selectorPath(value.tree).map(n => Literal(Constant(n)))})"
+    c.Expr[Field[A]](q"""jap.fields.Field($path, $value)""")
+  }
+
   def fromMacro[A: c.WeakTypeTag](c: blackbox.Context)(value: c.Expr[A]): c.Expr[Field[A]] = {
     import c.universe._
 

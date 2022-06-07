@@ -30,6 +30,18 @@ trait FieldSyntax {
       * val field: jap.fields.Field[String] = request.user.name:ann
       * }}}
       */
-    inline def from[V](inline value: V): Field[V] = ${ FieldMacro.fromImpl('value) }
+    inline def from[V](inline value: V): Field[V] = ${ FieldMacro.fromImpl('value, includeIdent = true) }
+
+    /** Similar to [[Field.from]] but drops first selector path
+      *
+      * Example:
+      * {{{
+      * scala> val request = Request(User("ann"))
+      * val request: Request = Request(User(ann))
+      * scala> val field = Field.sub(request.user.name)
+      * val field: jap.fields.Field[String] = user.name:ann
+      * }}}
+      */
+    inline def sub[V](inline value: V): Field[V] = ${ FieldMacro.fromImpl('value, includeIdent = false) }
   }
 }

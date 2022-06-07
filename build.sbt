@@ -157,8 +157,9 @@ val latestVersion = settingKey[String]("Latest stable released version")
 ThisBuild / latestVersion := {
   val snapshot = (ThisBuild / isSnapshot).value
   val stable   = (ThisBuild / isVersionStable).value
-  if (!snapshot && stable) (ThisBuild / version).value
-  else (ThisBuild / previousStableVersion).value.get
+  val version  = (ThisBuild / version).value
+  if (!snapshot && stable) version
+  else (ThisBuild / previousStableVersion).value.getOrElse(version)
 }
 
 Global / excludeLintKeys ++= Set(ThisBuild / idePackagePrefix)

@@ -155,11 +155,11 @@ lazy val `fields-docs`  =
 
 val latestVersion = settingKey[String]("Latest stable released version")
 ThisBuild / latestVersion := {
-  val snapshot = (ThisBuild / isSnapshot).value
-  val stable   = (ThisBuild / isVersionStable).value
-  val version  = (ThisBuild / version).value
-  if (!snapshot && stable) version
-  else (ThisBuild / previousStableVersion).value.getOrElse(version)
+  val snapshot       = (ThisBuild / isSnapshot).value
+  val stable         = (ThisBuild / isVersionStable).value
+  val currentVersion = (ThisBuild / version).value
+  if (!snapshot && stable) currentVersion
+  else (ThisBuild / previousStableVersion).value.getOrElse(currentVersion)
 }
 
 Global / excludeLintKeys ++= Set(ThisBuild / idePackagePrefix)

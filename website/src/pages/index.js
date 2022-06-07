@@ -45,7 +45,7 @@ export default function Home() {
           <Link to="docs/overview" className="button button--primary" >
             Docs
           </Link>
-          <Link href={`${site.url}${site.baseUrl}${apiUrl}/`} className="button button--primary" >
+          <Link href={`${siteConfig.url}${siteConfig.baseUrl}${siteConfig.customFields.apiUrl}/`} className="button button--primary" >
             Scaladoc
           </Link>
           <Link to={siteConfig.customFields.repoUrl} className="button button--primary" >

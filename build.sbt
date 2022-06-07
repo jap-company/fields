@@ -106,7 +106,7 @@ lazy val `fields-docs`  =
     .settings(
       moduleName                                 := "fields-docs",
       mdocVariables                              := Map(
-        "version"              -> version.value,
+        "version"              -> latestVersion.value,
         "organization"         -> (LocalRootProject / organization).value,
         "coreModuleName"       -> (`fields-core` / moduleName).value,
         "zioModuleName"        -> (`fields-cats` / moduleName).value,
@@ -152,5 +152,13 @@ lazy val `fields-docs`  =
     )
     .dependsOn(`fields-core`, `fields-cats`, `fields-zio`)
     .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+
+val latestVersion = settingKey[String]("Latest stable released version")
+ThisBuild / latestVersion := {
+  val snapshot = (ThisBuild / isSnapshot).value
+  val stable   = (ThisBuild / isVersionStable).value
+  if (!snapshot && stable) (ThisBuild / version).value
+  else (ThisBuild / previousStableVersion).value.get
+}
 
 Global / excludeLintKeys ++= Set(ThisBuild / idePackagePrefix)

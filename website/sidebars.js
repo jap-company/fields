@@ -29,8 +29,8 @@ const sidebars = {
         "validation-policy",
         "fail-with",
       ]
-    }
-    ,
+    },
+    "validation-syntax",
     "validation-module",
     "goals",
     "contributing",

@@ -12,7 +12,7 @@ import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test.environment._
 
-object TaskValidationModule extends FailFastVM[Task, FieldError[ValidationError]]
+object TaskValidationModule extends FailFastVM[Task, ValidationError]
 import TaskValidationModule.{assert => _, assertTrue => _, _}
 
 object ZioTaskSuite extends DefaultRunnableSpec {
@@ -59,7 +59,7 @@ object ZioTaskSuite extends DefaultRunnableSpec {
           result2       <- vr
         } yield (
           assert(beforeRun)(equalTo(0)) &&
-            assert(result1.errors)(equalTo(FieldError[ValidationError]("10", MinSize(10)) :: Nil)) &&
+            assert(result1.errors)(equalTo(MinSize("10", 10) :: Nil)) &&
             assert(afterFirstRun)(equalTo(expectedToInit)) &&
             assertTrue(result2.isInvalid) &&
             assert(inited.toList)(equalTo(expectedToInit))

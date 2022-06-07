@@ -4,27 +4,27 @@ import scala.annotation.implicitNotFound
 
 import syntax._
 import ValidationResult._
-import ValidationEffect.Id
+import ValidationEffect.Sync
 
-/** Base trait for ValidationModule where ValidationResult is FailFast */
+/** FailFast [[jap.fields.ValidationModule]] */
 abstract class FailFastVM[F[_]: ValidationEffect, E] extends ValidationModule[F, FailFast, E]
 
-/** Base trait for ValidationModule where ValidationResult is Accumulate */
+/** Accumulating [[jap.fields.ValidationModule]] */
 abstract class AccumulateVM[F[_]: ValidationEffect, E] extends ValidationModule[F, Accumulate, E]
 
 /** Default ValidationModule where:
-  *   - ValidationEffect is Id
+  *   - ValidationEffect is [[ValidationEffect.Sync]]
   *   - ValidationResult is Accumulate
-  *   - Error is FieldError[ValidationError]
+  *   - Error is ValidationError
   */
-object DefaultAccumulateVM extends AccumulateVM[Id, FieldError[ValidationError]]
+object DefaultAccumulateVM extends AccumulateVM[Sync, ValidationError]
 
 /** Default ValidationModule where:
-  *   - ValidationEffect is Id
+  *   - ValidationEffect is [[ValidationEffect.Sync]]
   *   - ValidationResult is FailFast
-  *   - Error is FieldError[ValidationError]
+  *   - Error is ValidationError
   */
-object DefaultFailFastVM extends FailFastVM[Id, FieldError[ValidationError]]
+object DefaultFailFastVM extends FailFastVM[Sync, ValidationError]
 
 /** God object that provides all validation syntax for choosen Effect - F[_], ValidationResult - VR[_] and Error - E
   * Requires user to provide implicit instances of ValidationEffect and ValidationResult typeclasses for choosen F[_]
@@ -47,8 +47,7 @@ abstract class ValidationModule[F[_], VR[_], E](implicit
     with FieldSyntax
     with ValidationResultSyntax {
 
-  /** Syntax classes requires implicit ValidationModule in scope
-    */
+  /** Syntax classes requires implicit ValidationModule in scope */
   implicit def Module: ValidationModule[F, VR, E] = this
 
   /** Valid VR[E] instance */
@@ -57,25 +56,26 @@ abstract class ValidationModule[F[_], VR[_], E](implicit
   /** Valid F[VR[E]] instance */
   val validF: F[VR[E]] = F.pure(valid)
 
-  /** For given field checks that `cond` is true or fail with provided `error` */
+  /** Returns [[ValidationResult.valid]] if `cond` is true else fails with provided `error` */
   @inline def assertTrue[P](field: Field[P], cond: => Boolean, error: Field[P] => E): F[VR[E]] =
     F.suspend(if (cond) VR.valid else VR.invalid(error(field)))
 
-  /** For given field checks that `cond` is true or fail with provided `error` */
+  /** Returns [[ValidationResult.valid]] if `cond` is true else fails with provided `error` */
   @inline def assert[P](field: Field[P], cond: P => Boolean, error: Field[P] => E): F[VR[E]] =
     assertTrue(field, cond(field.value), error)
 
-  /** For given field checks that `cond` effect result is true or fail with provided `error` */
+  /** Returns [[ValidationResult.valid]] if `cond` is true else fails with provided `error` */
   @inline def assertF[P](field: Field[P], cond: P => F[Boolean], error: Field[P] => E): F[VR[E]] =
     F.map(F.defer(cond(field.value)))(if (_) VR.valid else VR.invalid(error(field)))
 
-  /** For given field checks provided `f` validation */
+  /** Applies `f` validation to [[Field]]#value */
   @inline def check[P](field: Field[P], f: Field[P] => VR[E]): F[VR[E]] = F.suspend(f(field))
 
-  /** For given field checks provided effectful `f` validation */
+  /** Applies `f` effectful validation to [[Field]]#value */
   @inline def checkF[P](field: Field[P], f: Field[P] => F[VR[E]]): F[VR[E]] = F.defer(f(field))
 
-  /** Combines `a` and `b` using AND. Short-circuits if ValidationResult Strategy supports it.
+  /** Combines `a` and `b` using AND. Short-circuits if [[ValidationResult.strategy]] is
+    * [[ValidationResult.Strategy.FailFast]].
     */
   def and(a: F[VR[E]], b: F[VR[E]]) =
     VR.strategy match {
@@ -83,16 +83,15 @@ abstract class ValidationModule[F[_], VR[_], E](implicit
       case Strategy.FailFast   => F.flatMap(a)(aa => if (VR.isInvalid(aa)) F.pure(aa) else b)
     }
 
-  /** Combines `a` and `b` using OR. Short-circuits if `a` is valid
-    */
+  /** Combines `a` and `b` using OR. Short-circuits if `a` is valid */
   def or(a: F[VR[E]], b: F[VR[E]]) =
     F.flatMap(a)(aa =>
       if (VR.isValid(aa)) F.pure(aa)
       else F.map(b)(bb => VR.or(bb, aa))
     )
 
-  /** Combines all validations using provided combine function. This has minor optimistions that checks size to handle
-    * simple cases.
+  /** Combines all validations using `combine` function. This has minor optimistions that checks size to handle simple
+    * cases.
     */
   @inline def fold(list: List[F[VR[E]]], combine: (F[VR[E]], F[VR[E]]) => F[VR[E]]) =
     F.defer(
@@ -102,23 +101,23 @@ abstract class ValidationModule[F[_], VR[_], E](implicit
       else list.reduce(combine)
     )
 
-  /** Alias for and
-    */
+  /** Alias for [[and]] */
   def combineAll(list: List[F[VR[E]]]): F[VR[E]] = and(list)
 
-  /** Combine all validations using AND
-    */
+  /** Combines all validations using AND */
   def and(list: List[F[VR[E]]]): F[VR[E]] = fold(list, and)
 
-  /** Combine all validations using OR
-    */
+  /** Combines all validations using OR */
   def or(list: List[F[VR[E]]]): F[VR[E]] = fold(list, or)
 
-  /** Shorthands for Policy
-    */
+  /** Shortcut for [[ValidationPolicyBuilder]] */
   type PolicyBuilder[P] = ValidationPolicyBuilder[P, F, VR, E]
-  type Policy[P]        = ValidationPolicy[P, F, VR, E]
+
+  /** Shortcut for [[ValidationPolicy]] */
+  type Policy[P] = ValidationPolicy[P, F, VR, E]
   object Policy {
+
+    /** Shortcut for [[ValidationPolicy.builder]] */
     def builder[P]: PolicyBuilder[P] = ValidationPolicy.builder
   }
 }

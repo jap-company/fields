@@ -9,48 +9,46 @@ import ValidationResult.Strategy
 trait ValidationResult[VR[_]] {
   type TypeClass[E] = VR[E]
 
-  /** Implement to give hint for short-circuiting
-    */
+  /** Returns this Strategy */
   def strategy: Strategy
 
-  /** Create valid VR[E] */
+  /** Returns valid VR[E] */
   def valid[E]: VR[E]
 
-  /** Create invalid VR[E] with given `e` error */
-  def invalid[E](e: E): VR[E]
+  /** Returns invalid VR[E] with given error */
+  def invalid[E](error: E): VR[E]
 
-  /** Create Invalid VR with many errors. Override this for perfomance
-    */
+  /** Returns invalid VR[E] provided errors. Override this for perfomance */
   def invalidMany[E](eh: E, et: E*): VR[E] = and(invalid(eh), sequence(et.map(invalid).toList))
 
-  /** Check if `e` is valid */
-  def isValid[E](e: VR[E]): Boolean
+  /** Checks if `vr` is valid */
+  def isValid[E](vr: VR[E]): Boolean
 
-  /** Check if `e` is invalid */
-  def isInvalid[E](e: VR[E]): Boolean = !isValid(e)
+  /** Checks if `vr` is invalid */
+  def isInvalid[E](vr: VR[E]): Boolean = !isValid(vr)
 
-  /** Extract all `vr` errors to [[List]] */
+  /** Returns `vr` errors as [[scala.collection.immutable.List]] */
   def errors[E](vr: VR[E]): List[E]
 
-  /** Combine using AND `a` and `b` */
+  /** Combines `a` and `b` using AND */
   def and[E](a: VR[E], b: VR[E]): VR[E]
 
-  /** Combine using OR `a` and `b` */
+  /** Combines `a` and `b` using OR */
   def or[E](a: VR[E], b: VR[E]): VR[E] = if (isValid(a) || isValid(b)) valid else and(a, b)
 
-  /** Map `vr` into other using `f` function */
+  /** Maps `vr` using `f` function */
   def map[E, B](vr: VR[E])(f: E => B): VR[B]
 
-  /** If `cond` is true returns `vr` else valid */
+  /** Returns `vr` if `cond` is true else returns valid */
   def when[E](cond: Boolean)(vr: => VR[E]): VR[E] = if (cond) vr else valid[E]
 
-  /** If `cond` is false returns `vr` else valid */
+  /** Returns `vr` if `cond` is false else returns valid */
   def unless[E](cond: Boolean)(vr: => VR[E]): VR[E] = if (cond) valid[E] else vr
 
-  /** Combines all `results` using AND */
+  /** Combiness all `results` using AND */
   def sequence[E](results: VR[E]*): VR[E] = sequence[E](results.toList)
 
-  /** Combines all `results` using AND */
+  /** Combiness all `results` using AND */
   def sequence[E](results: List[VR[E]]): VR[E] = {
     if (results.size == 0) valid
     else if (results.size == 1) results.head
@@ -59,25 +57,29 @@ trait ValidationResult[VR[_]] {
   }
 }
 
-/** Base trait for ValidationResult's that fail-fast */
+/** Base trait for [[jap.fields.ValidationResult]] that fail-fast */
 trait FailFastLike[VR[_]] extends ValidationResult[VR] { val strategy: Strategy = Strategy.FailFast }
 
-/** Base trait for ValidationResult's that accumulate error */
+/** Base trait for [[jap.fields.ValidationResult]] that accumulate errors */
 trait AccumulateLike[VR[_]] extends ValidationResult[VR] { val strategy: Strategy = Strategy.Accumulate }
 
 object ValidationResult {
 
-  /** Summon ValidationResult instance for given VR */
+  /** Returns [[jap.fields.ValidationResult]] instance for given VR */
   def apply[VR[_]](implicit vr: ValidationResult[VR]): ValidationResult[VR] = vr
 
-  /** [[jap.fields.ValidationResult]] Strategy used for short-circuiting */
+  /** Will change behaviour of combining ValidationResult's depending on strategy */
   sealed trait Strategy
   object Strategy {
+
+    /** This strategy will accumulate all errors that occur */
     case object Accumulate extends Strategy
-    case object FailFast   extends Strategy
+
+    /** When first error occur validation will short-circuit and will not execute other validations */
+    case object FailFast extends Strategy
   }
 
-  /** Default Accumulate ValidationResult algrebra */
+  /** Accumulate [[jap.fields.ValidationResult]] implementation */
   sealed abstract class Accumulate[+E]
   implicit object Accumulate extends AccumulateLike[Accumulate] {
     case object Valid                                        extends Accumulate[Nothing]
@@ -108,7 +110,7 @@ object ValidationResult {
     }
   }
 
-  /** Default FailFast ValidationResult algrebra. It is just and Either */
+  /** FailFast [[jap.fields.ValidationResult]] implementation built on top of Either */
   type FailFast[+E] = Either[E, Unit]
   implicit object FailFast extends FailFastLike[FailFast] {
     def map[E, B](a: FailFast[E])(f: E => B): FailFast[B]   = a.left.map(f)

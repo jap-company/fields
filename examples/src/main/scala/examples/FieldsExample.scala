@@ -9,12 +9,17 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-import CanFail._
-import ValidationEffect.future._
+import zio._
+import cats._
 
-// object FutureValidationModule extends AccumulateVM[Future, FieldError[ValidationError]]
-object FutureValidationModule extends AccumulateVM[Future, FieldError[String]]
-// object FutureValidationModule extends AccumulateVM[Future, FieldError[ValidationError.Message]]
+// import jap.fields.FailWith.FailWithFieldValidationType // fails string errors as ValidationType
+import jap.fields.FailWith.FailWithFieldValidationMessage // fails string errors as ValidationMessage
+import jap.fields.ValidationEffect.future._
+
+// Try changing Module delclaration to see how easy it is to swap Error type
+// object FutureValidationModule extends AccumulateVM[Future, ValidationError]
+// object FutureValidationModule extends AccumulateVM[Future, FieldError[String]]
+object FutureValidationModule extends AccumulateVM[Future, ValidationError.Message]
 import FutureValidationModule._
 
 case class Email(value: String) extends AnyVal
@@ -38,11 +43,11 @@ object RegisterRequest {
   implicit val policy: Policy[RegisterRequest] = Policy
     .builder[RegisterRequest]
     .fieldRule(_.sub(_.username).map(_.value))(
-      _.min(1),
-      _.max(10),
+      _.minSize(1),
+      _.maxSize(10),
     )
     .subRule(_.age)(_ >= 18, _ <= 110)
-    .subRule(_.password)(_.nonEmpty, _.min(4), _.max(100))
+    .subRule(_.password)(_.nonEmpty, _.minSize(4), _.maxSize(100))
     .subRule2(_.password, _.passwordRepeat)(_ equalTo _)
     .build
 }
@@ -96,14 +101,14 @@ object FutureErrorExampleApp {
 
     val pureValidation =
       List(
-        usernameF.min(1),
-        usernameF.max(10),
+        usernameF.minSize(1),
+        usernameF.maxSize(10),
         usernameF.assertF(userService.usernameIsAvailable, _.messageError("Username is not available")),
         ageF >= 18,
         ageF <= 110,
         passwordF.nonEmpty,
-        passwordF.min(4),
-        passwordF.max(100),
+        passwordF.minSize(4),
+        passwordF.maxSize(100),
         passwordF === passwordRepeatF,
         emailF.map(_.value).matches(Email.EmailRegex),
         emailF.assertF(userService.emailIsAvailable, _.messageError("Email is not available")),

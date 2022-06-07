@@ -55,7 +55,7 @@ object FieldPath {
     */
   implicit def fromList(path: List[String]): FieldPath = FieldPath(path)
 
-  /** Conversion from [[jap.fields.Field]]
+  /** Conversion from [[Field]]
     */
   implicit def fromField[P](f: Field[P]): FieldPath = f.path
 }

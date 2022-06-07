@@ -87,9 +87,9 @@ class DslSuite extends munit.FunSuite {
 
     assertEquals(
       userBalancesF.each(_.second !== 0).errors,
-      List[FieldError[ValidationError]](
-        FieldError(List("ageCache", "userBalances", "0"), NotEqual("0")),
-        FieldError(List("ageCache", "userBalances", "1"), NotEqual("0")),
+      List[ValidationError](
+        NotEqual(FieldPath.raw("ageCache.userBalances.0"), "0"),
+        NotEqual(FieldPath.raw("ageCache.userBalances.1"), "0"),
       ),
     )
   }
@@ -97,7 +97,7 @@ class DslSuite extends munit.FunSuite {
     val someF = Field(Some(2))
     assertEquals(
       someF.some(_ > 10).errors,
-      someF.fieldError[ValidationError](Greater("10")) :: Nil,
+      Greater(someF, "10") :: Nil,
     )
   }
   test("None.some") {
@@ -122,8 +122,8 @@ class DslSuite extends munit.FunSuite {
         .subRule(_.bigInt)(_ > BigInt(4))
         .subRule(_.boolean)(_.isTrue, _.isFalse)
         .subRule(_.string)(
-          _.min(4),
-          _.max(8),
+          _.minSize(4),
+          _.maxSize(8),
           _.nonBlank,
           _.nonEmpty,
           _.blank,
@@ -136,13 +136,13 @@ class DslSuite extends munit.FunSuite {
         )
         .fieldRule(_.sub(_.stringValueClass).map(_.value))(_.nonEmpty)
         .subRule(_.mapStringString)(
-          _.min(4),
-          _.max(8),
+          _.minSize(4),
+          _.maxSize(8),
           _.each(_.first.nonBlank),
           _.eachKey(_.nonBlank),
           _.eachValue(_.blank),
         )
-        .subRule(_.listInt)(_.each(_ > 4), _.min(4), _.max(8))
+        .subRule(_.listInt)(_.each(_ > 4), _.minSize(4), _.maxSize(8))
         .subRule(_.optionInt)(_.isDefined, _.isEmpty, _.some(_ > 4))
         .subRule(_.nested.deep.int)(_ > 0)
         .build
@@ -157,8 +157,8 @@ class DslSuite extends munit.FunSuite {
     implicit val policy: Policy[Request] =
       Policy
         .builder[Request]
-        .subRule(_.name)(name => name.min(4) && name.max(48)) // runs all validations combining using and
-        .subRule(_.email)(email => email.validate)            // same but field creating is manual
+        .subRule(_.name)(name => name.minSize(4) && name.maxSize(48)) // runs all validations combining using and
+        .subRule(_.email)(email => email.validate)                    // same but field creating is manual
         .subRule2(_.age, _.hasParrot)((age, hasParrot) => age > 48 || (age > 22 && hasParrot.isTrue)) // 2 fields rule
         .build
 
@@ -173,7 +173,7 @@ class DslSuite extends munit.FunSuite {
 
 case class Email(value: String) extends AnyVal
 object Email {
-  implicit val policy: Policy[Email] = _.map(_.value).all(_.nonEmpty, _.max(40))
+  implicit val policy: Policy[Email] = _.map(_.value).all(_.nonEmpty, _.maxSize(40))
 }
 
 object RGB extends scala.Enumeration {

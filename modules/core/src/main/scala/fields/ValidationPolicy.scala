@@ -15,10 +15,10 @@ case class ValidationPolicyBuilder[P, F[_], VR[_], E](rules: List[Field[P] => F[
     val M: ValidationModule[F, VR, E]
 ) {
 
-  /** Add new rule to builder */
+  /** Adds new rule to builder */
   def rule(r: Field[P] => F[VR[E]]*): ValidationPolicyBuilder[P, F, VR, E] = copy(rules = rules ++ r)
 
-  /** Add new sub field rule to builder. First extracts sub field using `sub` function and then applies all `rules` to
+  /** Adds new sub field rule to builder. First extracts sub field using `sub` function and then applies all `rules` to
     * it
     */
   def fieldRule[S](sub: Field[P] => Field[S])(rules: Field[S] => F[VR[E]]*) =
@@ -27,7 +27,7 @@ case class ValidationPolicyBuilder[P, F[_], VR[_], E](rules: List[Field[P] => F[
       M.combineAll(rules.map(_.apply(subField)).toList)
     }
 
-  /** same as `fieldRule` but for 2 sub fields */
+  /** Same as `fieldRule` but for 2 sub fields */
   def fieldRule2[S1, S2](
       sub1: Field[P] => Field[S1],
       sub2: Field[P] => Field[S2],
@@ -40,6 +40,6 @@ case class ValidationPolicyBuilder[P, F[_], VR[_], E](rules: List[Field[P] => F[
       M.combineAll(rules.map(_.apply(subField1, subField2)).toList)
     }
 
-  /** Applies all validaiton rules to `field` */
+  /** Applies all validaiton rules to [[Field]]#value */
   def build: ValidationPolicy[P, F, VR, E] = field => M.combineAll(rules.map(_.apply(field)))
 }

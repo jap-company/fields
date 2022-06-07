@@ -11,65 +11,79 @@ trait GenericSyntax[F[_], VR[_], E] { M: ValidationModule[F, VR, E] =>
 }
 
 final class FieldOps[P, F[_], VR[_], E](private val field: Field[P]) extends AnyVal {
+
+  /** See [[ValidationModule.assertTrue]] */
   def assertTrue(cond: => Boolean, error: Field[P] => E)(implicit
       M: ValidationModule[F, VR, E]
   ): F[VR[E]] =
     M.assertTrue(field, cond, error)
 
+  /** See [[ValidationModule.assert]] */
   def assert(cond: P => Boolean, error: Field[P] => E)(implicit
       M: ValidationModule[F, VR, E]
   ): F[VR[E]] =
     M.assert(field, cond, error)
 
+  /** See [[ValidationModule.assertF]] */
   def assertF(cond: P => F[Boolean], error: Field[P] => E)(implicit
       M: ValidationModule[F, VR, E]
   ): F[VR[E]] =
     M.assertF(field, cond, error)
 
+  /** See [[ValidationModule.check]] */
   def check(f: Field[P] => VR[E])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
     M.check(field, f)
 
+  /** See [[ValidationModule.checkF]] */
   def checkF(f: Field[P] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
     M.checkF(field, f)
 
-  def ===[C](c: C)(implicit M: ValidationModule[F, VR, E], CF: CanFailCompare[E], C: FieldCompare[P, C]): F[VR[E]] =
-    equalTo(c)
+  /** Alias for [[equalTo]] */
+  def ===[C](
+      compared: C
+  )(implicit M: ValidationModule[F, VR, E], FW: FailWithCompare[E], C: FieldCompare[P, C]): F[VR[E]] =
+    equalTo(compared)
 
-  def equalTo[C](c: C)(implicit M: ValidationModule[F, VR, E], CF: CanFailCompare[E], C: FieldCompare[P, C]): F[VR[E]] =
-    assert(_ == C.value(c), CF.equal(c))
+  /** Validates that [[Field]]#value is equal to `compared` */
+  def equalTo[C](
+      compared: C
+  )(implicit M: ValidationModule[F, VR, E], FW: FailWithCompare[E], C: FieldCompare[P, C]): F[VR[E]] =
+    assert(_ == C.value(compared), FW.equal(compared))
 
-  def !==[C](c: C)(implicit M: ValidationModule[F, VR, E], CF: CanFailCompare[E], C: FieldCompare[P, C]): F[VR[E]] =
-    notEqualTo(c)
+  /** Alias for [[notEqualTo]] */
+  def !==[C](
+      compared: C
+  )(implicit M: ValidationModule[F, VR, E], FW: FailWithCompare[E], C: FieldCompare[P, C]): F[VR[E]] =
+    notEqualTo(compared)
 
-  def notEqualTo[C](c: C)(implicit
+  /** Validates that [[Field]]#value is not equal to `compared` */
+  def notEqualTo[C](compared: C)(implicit
       M: ValidationModule[F, VR, E],
-      CF: CanFailCompare[E],
+      FW: FailWithCompare[E],
       C: FieldCompare[P, C],
   ): F[VR[E]] =
-    assert(_ != C.value(c), CF.notEqual(c))
+    assert(_ != C.value(compared), FW.notEqual(compared))
 
-  def in(seq: Seq[P])(implicit M: ValidationModule[F, VR, E], CF: CanFailOneOf[E]): F[VR[E]] =
-    assert(seq.contains, CF.oneOf(seq))
+  /** Validates that [[Field]]#value is contained by `seq` */
+  def in(seq: Seq[P])(implicit M: ValidationModule[F, VR, E], FW: FailWithOneOf[E]): F[VR[E]] =
+    assert(seq.contains, FW.oneOf(seq))
 
-  /** Combines all validations using AND
-    */
+  /** Combines all validations using AND */
   def all(f: Field[P] => F[VR[E]]*)(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
     M.and(f.map(_.apply(field)).toList)
 
-  /** Combines all validations using OR
-    */
+  /** Combines all validations using OR */
   def any(f: Field[P] => F[VR[E]]*)(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
     M.or(f.map(_.apply(field)).toList)
 
-  /** Run validation only if true
-    */
+  /** Runs validation only if true */
   def when(cond: Boolean)(f: Field[P] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
     M.F.defer(if (cond) f(field) else M.validF)
 
-  /** Run validation only if false
-    */
+  /** Runs validation only if false */
   def unless(cond: Boolean)(f: Field[P] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
     M.F.defer(if (cond) M.validF else f(field))
 
+  /** Validates [[Field]] using implicit [[ValidationPolicy]] */
   def validate(implicit M: ValidationModule[F, VR, E], P: ValidationPolicy[P, F, VR, E]): F[VR[E]] = P.validate(field)
 }

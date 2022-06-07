@@ -12,40 +12,55 @@ trait FailSyntax[F[_], VR[_], E] { M: ValidationModule[F, VR, E] =>
 
 final class FailFieldOps[P, F[_], VR[_], E](private val field: Field[P]) extends AnyVal {
 
-  /** Just pathrought error
-    */
+  /** Just pathrought error */
   def error(error: E): E = error
 
-  /** Useful when your error is wrapped in FieldError
-    */
+  /** Useful when your error is wrapped in FieldError */
   def fieldError[EE](error: EE)(implicit ev: E =:= FieldError[EE]): E = FieldError(field.path, error).asInstanceOf[E]
 
-  def invalidError(implicit CF: CanFailInvalid[E]): E = CF.invalid(field)
+  /** Returns InvalidError using [[FailWithInvalid]] typeclass */
+  def invalidError(implicit FW: FailWithInvalid[E]): E = FW.invalid(field)
 
-  def emptyError(implicit CF: CanFailEmpty[E]): E = CF.empty(field)
+  /** Returns EmptyError using [[FailWithEmpty]] typeclass */
+  def emptyError(implicit FW: FailWithEmpty[E]): E = FW.empty(field)
 
-  def nonEmptyError(implicit CF: CanFailNonEmpty[E]): E = CF.nonEmpty(field)
+  /** Returns NonEmptyError using [[FailWithNonEmpty]] typeclass */
+  def nonEmptyError(implicit FW: FailWithNonEmpty[E]): E = FW.nonEmpty(field)
 
-  def greaterError[C](c: C)(implicit CF: CanFailCompare[E], C: FieldCompare[P, C]): E = CF.greater(c)(field)
+  /** Returns CompareError using [[FailWithCompare]] typeclass */
+  def greaterError[C](c: C)(implicit FW: FailWithCompare[E], C: FieldCompare[P, C]): E = FW.greater(c)(field)
 
-  def greaterEqualError[C](c: C)(implicit CF: CanFailCompare[E], C: FieldCompare[P, C]): E =
-    CF.greaterEqual(c)(field)
+  /** Returns CompareError using [[FailWithCompare]] typeclass */
+  def greaterEqualError[C](c: C)(implicit FW: FailWithCompare[E], C: FieldCompare[P, C]): E =
+    FW.greaterEqual(c)(field)
 
-  def lessError[C](c: C)(implicit CF: CanFailCompare[E], C: FieldCompare[P, C]): E = CF.less(c)(field)
+  /** Returns CompareError using [[FailWithCompare]] typeclass */
+  def lessError[C](c: C)(implicit FW: FailWithCompare[E], C: FieldCompare[P, C]): E = FW.less(c)(field)
 
-  def lessEqualError[C](c: C)(implicit CF: CanFailCompare[E], C: FieldCompare[P, C]): E =
-    CF.lessEqual(c)(field)
+  /** Returns CompareError using [[FailWithCompare]] typeclass */
+  def lessEqualError[C](c: C)(implicit FW: FailWithCompare[E], C: FieldCompare[P, C]): E =
+    FW.lessEqual(c)(field)
 
-  def equalError[C](c: C)(implicit CF: CanFailCompare[E], C: FieldCompare[P, C]): E = CF.equal(c)(field)
+  /** Returns CompareError using [[FailWithCompare]] typeclass */
+  def equalError[C](c: C)(implicit FW: FailWithCompare[E], C: FieldCompare[P, C]): E = FW.equal(c)(field)
 
-  def notEqualError[C](c: C)(implicit CF: CanFailCompare[E], C: FieldCompare[P, C]): E = CF.notEqual(c)(field)
+  /** Returns CompareError using [[FailWithCompare]] typeclass */
+  def notEqualError[C](c: C)(implicit FW: FailWithCompare[E], C: FieldCompare[P, C]): E = FW.notEqual(c)(field)
 
-  def minSizeError(size: Int)(implicit CF: CanFailMinSize[E]): E = CF.minSize(size)(field)
+  /** Returns MinSizeError using [[FailWithMinSize]] typeclass */
+  def minSizeError(size: Int)(implicit FW: FailWithMinSize[E]): E = FW.minSize(size)(field)
 
-  def maxSizeError(size: Int)(implicit CF: CanFailMaxSize[E]): E = CF.maxSize(size)(field)
+  /** Returns MaxSizeError using [[FailWithMaxSize]] typeclass */
+  def maxSizeError(size: Int)(implicit FW: FailWithMaxSize[E]): E = FW.maxSize(size)(field)
 
-  def oneOfError[PP >: P](variants: Seq[PP])(implicit CF: CanFailOneOf[E]): E = CF.oneOf(variants)(field)
+  /** Returns OneOfError using [[FailWithOneOf]] typeclass */
+  def oneOfError[PP >: P](variants: Seq[PP])(implicit FW: FailWithOneOf[E]): E = FW.oneOf(variants)(field)
 
-  def messageError(error: String, description: Option[String] = None)(implicit CF: CanFailMessage[E]): E =
-    CF.message(error, description)(field)
+  /** Returns MessageError using [[FailWithMessage]] typeclass */
+  def messageError(error: String, description: Option[String] = None)(implicit FW: FailWithMessage[E]): E =
+    FW.message(error, description)(field)
+
+  /** Returns MessageError using [[FailWithMessage]] typeclass */
+  def messageError(error: String, description: String)(implicit FW: FailWithMessage[E]): E =
+    FW.message(error, Some(description))(field)
 }

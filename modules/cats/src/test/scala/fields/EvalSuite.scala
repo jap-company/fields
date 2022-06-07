@@ -9,9 +9,9 @@ import scala.collection.mutable.ListBuffer
 import ValidationError._
 import ValidationResult._
 import CatsInterop._
-import CanFail._
+import FailWith._
 
-object EvalValidationModule extends FailFastVM[Eval, FieldError[ValidationError]]
+object EvalValidationModule extends FailFastVM[Eval, ValidationError]
 import EvalValidationModule._
 
 class EvalSuite extends munit.FunSuite {
@@ -43,7 +43,7 @@ class EvalSuite extends munit.FunSuite {
 
     val expectedToInit = (0 to 10).map(v => FieldPath(v.toString)).toList
     assertEquals(inited.toList.length, 0)
-    assertEquals(vr.value.errors, FieldError[ValidationError]("10", MinSize(10)) :: Nil)
+    assertEquals(vr.value.errors, MinSize("10", 10) :: Nil)
     assertEquals(inited.toList, expectedToInit)
     assertEquals(vr.value.isInvalid, true)
     assertEquals(inited.toList, expectedToInit)

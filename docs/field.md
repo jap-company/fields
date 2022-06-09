@@ -15,6 +15,7 @@ val path: FieldPath = ???
 Field(path, request.name) //Field(path, request.name) Using path and value
 Field(request.name) //Field(FieldPath.root, request.name) Using value without path
 Field.from(request.name) //Field(FieldPath("request", "name"), request.name) Innherit path from field selects
+Field.sub(request.name) //Field(FieldPath("name"), request.name) Innherit path from field selects and drops first path
 
 val requestF = Field.from(request)
 requestF.sub(_.name) // Derive subfield using field selector

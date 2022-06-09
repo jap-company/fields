@@ -71,7 +71,7 @@ case class RegisterRequestValidator(userService: UserService) {
       .build
 }
 
-object FutureErrorExampleApp {
+object FieldsExample {
   final def main(args: Array[String]) = {
     def Divider                   = "---------------"
     def await[T](f: Future[T]): T = Await.result(f, Duration.Inf)

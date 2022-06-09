@@ -86,4 +86,8 @@ final class FieldOps[P, F[_], VR[_], E](private val field: Field[P]) extends Any
 
   /** Validates [[Field]] using implicit [[ValidationPolicy]] */
   def validate(implicit M: ValidationModule[F, VR, E], P: ValidationPolicy[P, F, VR, E]): F[VR[E]] = P.validate(field)
+
+  /** Validates [[Field]] using implicit [[ValidationPolicy]] */
+  def validateEither(implicit M: ValidationModule[F, VR, E], P: ValidationPolicy[P, F, VR, E]): F[Either[VR[E], P]] =
+    M.F.map(P.validate(field))(vr => if (M.VR.isValid(vr)) Right(field.value) else Left(vr))
 }

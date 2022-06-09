@@ -15,7 +15,7 @@ trait FieldSyntax {
       * val res1: jap.fields.Field[String] = request.user.name:ann
       * }}}
       */
-    inline def sub[S](inline selector: P => S): Field[S] = ${ FieldMacro.subImpl('field, 'selector) }
+    inline def sub[S](inline selector: P => S): Field[S] = ${ FieldMacro.subImpl[P, S]('field, 'selector) }
   }
 
   extension (field: Field.type) {
@@ -30,6 +30,22 @@ trait FieldSyntax {
       * val field: jap.fields.Field[String] = request.user.name:ann
       * }}}
       */
-    inline def from[V](inline value: V): Field[V] = ${ FieldMacro.fromImpl('value) }
+    inline def from[V](inline value: V): Field[V] = ${
+      FieldMacro.fromImpl[V]('value, includeIdent = true, title = "Field.from")
+    }
+
+    /** Similar to [[Field.from]] but drops first selector path
+      *
+      * Example:
+      * {{{
+      * scala> val request = Request(User("ann"))
+      * val request: Request = Request(User(ann))
+      * scala> val field = Field.sub(request.user.name)
+      * val field: jap.fields.Field[String] = user.name:ann
+      * }}}
+      */
+    inline def sub[V](inline value: V): Field[V] = ${
+      FieldMacro.fromImpl[V]('value, includeIdent = false, title = "Field.sub")
+    }
   }
 }

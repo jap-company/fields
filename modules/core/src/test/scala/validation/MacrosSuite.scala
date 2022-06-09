@@ -16,6 +16,16 @@ class MacrosSuite extends munit.FunSuite {
   }
 
   test("Field.sub") {
+    val data = TestData()
+    assertEquals(Field.sub(data), Field(FieldPath.Root, data))
+    assertEquals(Field.sub(data.nested), Field(FieldPath("nested"), data.nested))
+    assertEquals(
+      Field.sub(data.nested.deep),
+      Field(FieldPath("nested", "deep"), data.nested.deep),
+    )
+  }
+
+  test("Field#sub") {
     val data     = TestData()
     val dataF    = Field(data)
     val nestedF  = dataF.sub(_.nested)

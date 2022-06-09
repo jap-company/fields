@@ -37,4 +37,16 @@ final class FieldFromOps(private val field: Field.type) extends AnyVal {
     * }}}
     */
   def from[V](value: V): Field[V] = macro FieldMacro.fromMacro[V]
+
+  /** Similar to [[Field.from]] but drops first selector path
+    *
+    * Example:
+    * {{{
+    * scala> val request = Request(User("ann"))
+    * val request: Request = Request(User(ann))
+    * scala> val field = Field.sub(request.user.name)
+    * val field: jap.fields.Field[String] = user.name:ann
+    * }}}
+    */
+  def sub[V](value: V): Field[V] = macro FieldMacro.fromSubMacro[V]
 }

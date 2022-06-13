@@ -1,19 +1,17 @@
 package jap.fields
 
+import FieldPathConversions._
 import ValidationError._
 import ValidationResult._
 import ZIOInterop._
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import zio._
 import zio.test._
 import zio.test.Assertion._
-import zio.test.TestAspect._
-import zio.test.environment._
 
 object TaskValidationModule extends FailFastVM[Task, ValidationError]
-import TaskValidationModule.{assert => _, assertTrue => _, _}
+import TaskValidationModule._
 
 object ZioTaskSuite extends DefaultRunnableSpec {
   def init[A](path: FieldPath)(a: A)(implicit inited: ListBuffer[FieldPath]): A = {
@@ -27,7 +25,7 @@ object ZioTaskSuite extends DefaultRunnableSpec {
         implicit val inited: ListBuffer[FieldPath] = new ListBuffer[FieldPath]
 
         val field = Field(FieldPath.Root, 12)
-        val vr    = field.assert(init(field)(_) > 10, _.minSizeError(10))
+        val vr    = field.ensure(init(field)(_) > 10, _.failMinSize(10))
 
         val beforeRun = inited.toList.length
 
@@ -43,7 +41,7 @@ object ZioTaskSuite extends DefaultRunnableSpec {
         val vrMemo = (0 to 100)
           .map { i =>
             val field = Field(i.toString, 10)
-            field.assert(init(field)(_) > i, _.minSizeError(10))
+            field.ensure(init(field)(_) > i, _.failMinSize(10))
           }
           .combineAll
           .memoize

@@ -1,7 +1,20 @@
-package jap.fields
+/*
+ * Copyright 2022 Jap
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+package jap.fields
 
 import ValidationResult.Strategy
 
@@ -39,6 +52,18 @@ trait ValidationResult[VR[_]] {
   /** Maps `vr` using `f` function */
   def map[E, B](vr: VR[E])(f: E => B): VR[B]
 
+  /** Returns `error` if `vr` is invalid */
+  def asError[E](vr: VR[E])(error: E): VR[E] = whenInvalid[E](vr)(_ => invalid(error))
+
+  /** Returns `invalid` if `vr` is invalid */
+  def asInvalid[E](vr: VR[E])(invalid: VR[E]): VR[E] = whenInvalid[E](vr)(_ => invalid)
+
+  /** Returns `b` if `a` is valid else returns `a` */
+  def whenValid[E](a: VR[E])(b: => VR[E]): VR[E] = if (isValid(a)) b else a
+
+  /** Returns `f` applied to `a` if `a` is invalid else returns `a` */
+  def whenInvalid[E](a: VR[E])(f: VR[E] => VR[E]): VR[E] = if (isInvalid(a)) f(a) else a
+
   /** Returns `vr` if `cond` is true else returns valid */
   def when[E](cond: Boolean)(vr: => VR[E]): VR[E] = if (cond) vr else valid[E]
 
@@ -46,15 +71,19 @@ trait ValidationResult[VR[_]] {
   def unless[E](cond: Boolean)(vr: => VR[E]): VR[E] = if (cond) valid[E] else vr
 
   /** Combiness all `results` using AND */
-  def sequence[E](results: VR[E]*): VR[E] = sequence[E](results.toList)
+  def sequence[E](results: List[VR[E]]): VR[E] = andAll[E](results)
 
   /** Combiness all `results` using AND */
-  def sequence[E](results: List[VR[E]]): VR[E] = {
-    if (results.size == 0) valid
-    else if (results.size == 1) results.head
-    else if (results.size == 2) and(results(0), results(1))
-    else results.foldLeft(valid[E])(and)
-  }
+  def andAll[E](results: List[VR[E]]): VR[E] = FoldUtil.fold[VR[E]](results, valid[E], and[E])
+
+  /** Combiness all `results` using OR */
+  def orAll[E](results: List[VR[E]]): VR[E] = FoldUtil.fold[VR[E]](results, valid[E], or[E])
+
+  def traverse[A, E](a: List[A])(error: A => VR[E]): VR[E] =
+    sequence(a.toList.map(error))
+
+  def traverse[A, E](a: A*)(error: A => VR[E]): VR[E] =
+    sequence(a.toList.map(error))
 }
 
 /** Base trait for [[jap.fields.ValidationResult]] that fail-fast */

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Jap
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package jap.fields
 
 import scala.annotation.tailrec
@@ -20,7 +36,7 @@ class SelectorMacro[Q <: Quotes](using val q: Q) {
         case Inlined(_, _, rest)                                              => go(rest, acc)
         case Apply(Select(rest, "apply"), List(Literal(IntConstant(index))))  => go(rest, index.toString :: acc)
         case Apply(Select(rest, "apply"), List(Literal(StringConstant(key)))) => go(rest, key :: acc)
-        case unmatched => report.throwError(FieldMacroMessage.selectorErrorMessage(title))
+        case unmatched => report.errorAndAbort(FieldMacroMessage.selectorErrorMessage(title))
       }
 
     // report.info(term.show(using Printer.TreeStructure))
@@ -47,7 +63,7 @@ object FieldMacro {
       body match
         case Inlined(_, _, term)                         => extractBody(term)
         case Block(List(DefDef(_, _, _, Some(term))), _) => term
-        case _ => report.throwError("This is not a selector function. Check the Documentation")
+        case _ => report.errorAndAbort("This is not a selector function. Check the Documentation")
     // Get body
     val selectorBody                  = extractBody(subSelector.asTerm)
     // report.info(selectorBody.asTerm.show(using Printer.TreeStructure))

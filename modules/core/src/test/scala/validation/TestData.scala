@@ -1,8 +1,5 @@
 package jap.fields
 
-import java.util.UUID
-import java.time.LocalDate
-
 case class TestData(
     boolean: Boolean = false,
     int: Int = 0,

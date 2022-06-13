@@ -1,9 +1,12 @@
+import BuildHelper._
 import com.typesafe.sbt.SbtGit.GitKeys._
 
 ThisBuild / organization           := "company.jap"
+ThisBuild / organizationName       := "Jap"
 ThisBuild / idePackagePrefix       := Some("jap.fields")
+ThisBuild / startYear              := Some(2022)
 ThisBuild / homepage               := Some(url("https://github.com/jap-company/fields"))
-ThisBuild / licenses               := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
+ThisBuild / licenses               := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.txt"))
 ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
 ThisBuild / sonatypeRepository     := "https://s01.oss.sonatype.org/service/local"
 ThisBuild / developers             :=
@@ -21,7 +24,7 @@ lazy val V      = new {
   val Zio      = "1.0.13"
   val Scala3   = "3.1.2"
   val Scala213 = "2.13.8"
-  val Scala212 = "2.12.15"
+  val Scala212 = "2.12.16"
   val MUnit    = "0.7.29"
 }
 val editorScala = V.Scala3
@@ -38,8 +41,9 @@ lazy val root = (project in file("."))
   )
 
 lazy val scalaSettings = Seq(
-  scalaVersion       := editorScala,
-  crossScalaVersions := List(V.Scala212, V.Scala213, V.Scala3),
+  scalaVersion           := editorScala,
+  crossScalaVersions     := List(V.Scala212, V.Scala213, V.Scala3),
+  tpolecatExcludeOptions := Set(ScalacOptions.privateKindProjector),
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((3, _)) => Seq("-Ykind-projector:underscores")
@@ -60,6 +64,7 @@ lazy val `fields-core` =
   (project in file("modules/core"))
     .settings(
       commonSettings,
+      buildInfoSettings("jap.fields"),
       libraryDependencies ++= {
         scalaVersion.value match {
           case V.Scala3 => Nil
@@ -67,6 +72,7 @@ lazy val `fields-core` =
         }
       },
     )
+    .enablePlugins(BuildInfoPlugin)
 
 lazy val `fields-cats` =
   (project in file("modules/cats"))

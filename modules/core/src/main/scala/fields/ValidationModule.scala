@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Jap
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package jap.fields
 
 import scala.annotation.implicitNotFound
@@ -36,9 +52,10 @@ abstract class ValidationModule[F[_], VR[_], E](implicit
     val VR: ValidationResult[VR],
 ) extends GenericSyntax[F, VR, E]
     with FailSyntax[F, VR, E]
+    with ErrorSyntax[F, VR, E]
     with BooleanSyntax[F, VR, E]
     with EffectValidationResultSyntax[F, VR, E]
-    with NumericSyntax[F, VR, E]
+    with OrderingSyntax[F, VR, E]
     with OptionSyntax[F, VR, E]
     with StringSyntax[F, VR, E]
     with IterableSyntax[F, VR, E]
@@ -46,33 +63,51 @@ abstract class ValidationModule[F[_], VR[_], E](implicit
     with PolicySyntax[F, VR, E]
     with FieldSyntax
     with ValidationResultSyntax {
+  type Rule = F[VR[E]]
 
   /** Syntax classes requires implicit ValidationModule in scope */
   implicit def Module: ValidationModule[F, VR, E] = this
 
-  /** Valid VR[E] instance */
+  /** Valid `VR[E]` instance */
   val valid: VR[E] = VR.valid[E]
+
+  /** Returns invalid `VR[E]` containing provided error */
+  def invalid(error: E): VR[E] = VR.invalid(error)
+
+  /** Returns `F[_]` containing invalid `VR[E]` containing provided error */
+  def invalidF(error: E): F[VR[E]] = F.suspend(VR.invalid(error))
 
   /** Valid F[VR[E]] instance */
   val validF: F[VR[E]] = F.pure(valid)
 
   /** Returns [[ValidationResult.valid]] if `cond` is true else fails with provided `error` */
-  @inline def assertTrue[P](field: Field[P], cond: => Boolean, error: Field[P] => E): F[VR[E]] =
-    F.suspend(if (cond) VR.valid else VR.invalid(error(field)))
+  @inline def ensure[P](cond: => Boolean, vr: => VR[E]): F[VR[E]] =
+    F.suspend(if (cond) valid else vr)
+
+  @inline def ensureF[P](cond: => F[Boolean], vr: => VR[E]): F[VR[E]] =
+    F.map(F.defer(cond))(if (_) valid else vr)
 
   /** Returns [[ValidationResult.valid]] if `cond` is true else fails with provided `error` */
-  @inline def assert[P](field: Field[P], cond: P => Boolean, error: Field[P] => E): F[VR[E]] =
-    assertTrue(field, cond(field.value), error)
+  @inline def fieldEnsure[P](field: Field[P], cond: P => Boolean, vr: Field[P] => VR[E]): F[VR[E]] =
+    ensure(cond(field.value), vr(field))
 
   /** Returns [[ValidationResult.valid]] if `cond` is true else fails with provided `error` */
-  @inline def assertF[P](field: Field[P], cond: P => F[Boolean], error: Field[P] => E): F[VR[E]] =
-    F.map(F.defer(cond(field.value)))(if (_) VR.valid else VR.invalid(error(field)))
+  @inline def fieldEnsureF[P](field: Field[P], cond: P => F[Boolean], vr: Field[P] => VR[E]): F[VR[E]] =
+    ensureF(cond(field.value), vr(field))
 
-  /** Applies `f` validation to [[Field]]#value */
-  @inline def check[P](field: Field[P], f: Field[P] => VR[E]): F[VR[E]] = F.suspend(f(field))
+  /** Like [[ValidationModule.ensure]] but single error */
+  @inline def fieldAssert[P](field: Field[P], cond: P => Boolean, error: Field[P] => E): F[VR[E]] =
+    fieldEnsure(field, cond, error.andThen(invalid))
 
-  /** Applies `f` effectful validation to [[Field]]#value */
-  @inline def checkF[P](field: Field[P], f: Field[P] => F[VR[E]]): F[VR[E]] = F.defer(f(field))
+  /** Like [[ValidationModule.ensureF]] but single error */
+  @inline def fieldAssertF[P](field: Field[P], cond: P => F[Boolean], error: Field[P] => E): F[VR[E]] =
+    fieldEnsureF(field, cond, error.andThen(invalid))
+
+  /** Applies `f` validation to [[jap.fields.Field]]#value */
+  @inline def fieldCheck[P](field: Field[P], f: Field[P] => VR[E]): F[VR[E]] = F.suspend(f(field))
+
+  /** Applies `f` effectful validation to [[jap.fields.Field]]#value */
+  @inline def fieldCheckF[P](field: Field[P], f: Field[P] => F[VR[E]]): F[VR[E]] = F.defer(f(field))
 
   /** Combines `a` and `b` using AND. Short-circuits if [[ValidationResult.strategy]] is
     * [[ValidationResult.Strategy.FailFast]].
@@ -90,25 +125,14 @@ abstract class ValidationModule[F[_], VR[_], E](implicit
       else F.map(b)(bb => VR.or(bb, aa))
     )
 
-  /** Combines all validations using `combine` function. This has minor optimistions that checks size to handle simple
-    * cases.
-    */
-  @inline def fold(list: List[F[VR[E]]], combine: (F[VR[E]], F[VR[E]]) => F[VR[E]]) =
-    F.defer(
-      if (list.size == 0) validF
-      else if (list.size == 1) list.head
-      else if (list.size == 2) combine(list(0), list(1))
-      else list.reduce(combine)
-    )
-
   /** Alias for [[and]] */
-  def combineAll(list: List[F[VR[E]]]): F[VR[E]] = and(list)
+  def combineAll(list: List[F[VR[E]]]): F[VR[E]] = andAll(list)
 
   /** Combines all validations using AND */
-  def and(list: List[F[VR[E]]]): F[VR[E]] = fold(list, and)
+  def andAll(list: List[F[VR[E]]]): F[VR[E]] = FoldUtil.fold(list, validF, and)
 
   /** Combines all validations using OR */
-  def or(list: List[F[VR[E]]]): F[VR[E]] = fold(list, or)
+  def orAll(list: List[F[VR[E]]]): F[VR[E]] = FoldUtil.fold(list, validF, or)
 
   /** Shortcut for [[ValidationPolicyBuilder]] */
   type PolicyBuilder[P] = ValidationPolicyBuilder[P, F, VR, E]

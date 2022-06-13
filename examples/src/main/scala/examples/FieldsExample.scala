@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Jap
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package jap.fields
 package examples
 
@@ -48,7 +64,7 @@ object RegisterRequest {
     )
     .subRule(_.age)(_ >= 18, _ <= 110)
     .subRule(_.password)(_.nonEmpty, _.minSize(4), _.maxSize(100))
-    .subRule2(_.password, _.passwordRepeat)(_ equalTo _)
+    .subRule(_.password, _.passwordRepeat)(_ equalTo _)
     .build
 }
 
@@ -65,9 +81,9 @@ case class RegisterRequestValidator(userService: UserService) {
       .rule(RegisterRequest.policy.validate)
       // Effectful validations
       .fieldRule(_.sub(_.username).map(_.value))(
-        _.assertF(userService.usernameIsAvailable, _.messageError("Username is not available"))
+        _.ensureF(userService.usernameIsAvailable, _.failMessage("Username is not available"))
       )
-      .subRule(_.email)(_.assertF(userService.emailIsAvailable, _.messageError("Email is not available")))
+      .subRule(_.email)(_.ensureF(userService.emailIsAvailable, _.failMessage("Email is not available")))
       .build
 }
 
@@ -99,11 +115,13 @@ object FieldsExample {
     val passwordF       = requestF.sub(_.password)
     val passwordRepeatF = requestF.sub(_.passwordRepeat)
 
+    println("Fields Build Info: " + jap.fields.BuildInfo)
+
     val pureValidation =
       List(
         usernameF.minSize(1),
         usernameF.maxSize(10),
-        usernameF.assertF(userService.usernameIsAvailable, _.messageError("Username is not available")),
+        usernameF.ensureF(userService.usernameIsAvailable, _.failMessage("Username is not available")),
         ageF >= 18,
         ageF <= 110,
         passwordF.nonEmpty,
@@ -111,7 +129,7 @@ object FieldsExample {
         passwordF.maxSize(100),
         passwordF === passwordRepeatF,
         emailF.map(_.value).matches(Email.EmailRegex),
-        emailF.assertF(userService.emailIsAvailable, _.messageError("Email is not available")),
+        emailF.ensureF(userService.emailIsAvailable, _.failMessage("Email is not available")),
       ).combineAll
 
     println(await(requestF.validate).errors)

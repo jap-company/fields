@@ -2,7 +2,6 @@ package jap.fields
 
 import ValidationError._
 import DefaultAccumulateVM._
-import ValidationResult._
 
 class MacrosSuite extends munit.FunSuite {
   test("Field.from") {
@@ -62,7 +61,7 @@ class MacrosSuite extends munit.FunSuite {
     implicit val policy: Policy[TestData] =
       Policy
         .builder[TestData]
-        .subRule2(_.int, _.nested.deep.int)(_ !== _)
+        .subRule(_.int, _.nested.deep.int)(_ !== _)
         .build
 
     val data  = TestData(int = 1, nested = NestedTestData(DeepTestData(1)))

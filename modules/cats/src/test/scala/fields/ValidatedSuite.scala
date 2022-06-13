@@ -1,13 +1,8 @@
 package jap.fields
 
-import cats._
 import cats.data._
 
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-
 import ValidationError._
-import ValidationResult._
 import CatsInterop._
 
 class ValidatedSuite extends munit.FunSuite {

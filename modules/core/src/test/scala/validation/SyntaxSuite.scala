@@ -1,11 +1,11 @@
 package jap.fields
 
+import FieldPathConversions._
 import DefaultAccumulateVM._
 import ValidationError._
-import ValidationResult._
 import scala.util.Properties
 
-class DslSuite extends munit.FunSuite {
+class SyntaxSuite extends munit.FunSuite {
   test("compare Field[P] with P") {
     val field = Field(4)
     assertEquals((field > 8).errors.head, field.greaterError(8))
@@ -159,7 +159,7 @@ class DslSuite extends munit.FunSuite {
         .builder[Request]
         .subRule(_.name)(name => name.minSize(4) && name.maxSize(48)) // runs all validations combining using and
         .subRule(_.email)(email => email.validate)                    // same but field creating is manual
-        .subRule2(_.age, _.hasParrot)((age, hasParrot) => age > 48 || (age > 22 && hasParrot.isTrue)) // 2 fields rule
+        .subRule(_.age, _.hasParrot)((age, hasParrot) => age > 48 || (age > 22 && hasParrot.isTrue)) // 2 fields rule
         .build
 
     val request: Request = Request("", Email(""), 23, true)

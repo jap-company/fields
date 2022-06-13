@@ -1,8 +1,5 @@
 package jap.fields
 
-import DefaultAccumulateVM._
-import ValidationError._
-
 class FieldPathSuite extends munit.FunSuite {
   test("FieldPath.name") {
     assertEquals(FieldPath.Root.name, "root")

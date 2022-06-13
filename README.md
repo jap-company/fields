@@ -1,10 +1,8 @@
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner-direct-single.svg)](https://stand-with-ukraine.pp.ua)
 
-<center>
-
-![Jap Logo](assets/jap-logo.png)
-
-</center>
+<p align="center">
+    <img src="assets/jap-logo.png" alt="Jap Logo"/>
+</p>
 
 | Scaladex                           | Maven                        | CI                     | Telegram                           | Scaladoc                           |
 | ---------------------------------- | ---------------------------- | ---------------------- | ---------------------------------- | ---------------------------------- |

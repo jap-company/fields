@@ -53,13 +53,13 @@ final case class Field[+P](
   /** Maps `path` */
   def mapPath(f: FieldPath => FieldPath): Field[P] = withPath(f(this.path))
 
-  /** Gets first tuple element of `value`. Given [[P]] is Tuple */
+  /** Gets first tuple element of `value`. Given `P` is Tuple */
   def first[P1, P2](implicit ev: P <:< (P1, P2)): Field[P1] = map(ev(_)._1)
 
-  /** Gets second tuple element of `value`. Given [[P]] is Tuple */
+  /** Gets second tuple element of `value`. Given `P` is Tuple */
   def second[P1, P2](implicit ev: P <:< (P1, P2)): Field[P2] = map(ev(_)._2)
 
-  /** Turns Option on `value` into Option on `jap.fields.Field`. Given [[P]] i `Option[V]` */
+  /** Turns Option on `value` into Option on `jap.fields.Field`. Given `P` i `Option[V]` */
   def option[V](implicit ev: P <:< Option[V]): Option[Field[V]] = ev(value).map(withValue)
 
   override def toString = fullPath + ":" + value

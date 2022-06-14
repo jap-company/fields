@@ -17,4 +17,8 @@ class FieldSuite extends munit.FunSuite {
     val field = Field("a", "a")
     assertEquals(field.selectSub("A", _.toUpperCase), Field(FieldPath.raw("a.A"), "A"))
   }
+  test("Field.option") {
+    assertEquals(Field(Some(2)).option, Some(Field(2)))
+    assertEquals(Field[Option[Int]](None).option, None)
+  }
 }

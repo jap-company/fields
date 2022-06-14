@@ -93,17 +93,6 @@ class SyntaxSuite extends munit.FunSuite {
       ),
     )
   }
-  test("Some.some") {
-    val someF = Field(Some(2))
-    assertEquals(
-      someF.some(_ > 10).errors,
-      Greater(someF, "10") :: Nil,
-    )
-  }
-  test("None.some") {
-    val noneF: Field[Option[Int]] = Field(None)
-    assertEquals(noneF.some(_ > 10).errors, Nil)
-  }
   test("String.isEnum") {
     assert(Field("Red").isEnum(RGB).isValid)
     assert(Field("Purple").isEnum(RGB).isInvalid)

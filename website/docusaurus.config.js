@@ -4,7 +4,7 @@
 const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
-const apiUrl = "api";
+const apiUrl = 'api';
 
 const local = {
   baseUrl: '/',
@@ -21,11 +21,14 @@ const repoUrl = 'https://github.com/jap-company/fields'
 // Uncomment for local development. Do not forget to comment back
 // const site = local
 const site = github
+const title = 'Fields'
+const tagline = 'Lightweight, enjoyable and extendable Scala validation library'
+const keywords = ['fields', 'scala', 'validation', 'library', 'macros', 'zio', 'cats', 'short-circuit', 'scala 3', 'scala 2.12', 'scala 2.13', 'tagless-final', 'error paths']
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Fields',
-  tagline: 'Lightweight, enjoyable and extendable Scala validation library',
+  title,
+  tagline,
   url: site.url,
   baseUrl: site.baseUrl,
   onBrokenLinks: 'log',
@@ -37,7 +40,7 @@ const config = {
 
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
-  // to replace "en" with "zh-Hans".
+  // to replace 'en' with 'zh-Hans'.
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],
@@ -49,7 +52,7 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          path: "../fields-docs/target/mdoc",
+          path: '../fields-docs/target/mdoc',
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: params => 'https://github.com/jap-company/fields/tree/master/docs/' + params.docPath,
         },
@@ -62,13 +65,17 @@ const config = {
     ],
   ],
   customFields: {
-    titleIcon: "img/logo.svg",
+    titleIcon: 'img/logo.svg',
     apiUrl,
     repoUrl,
   },
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      metadata: [
+        { name: 'keywords', content: keywords.join(', ') },
+        { name: 'description', content: `${title} - ${tagline}` },
+      ],
       navbar: {
         title: 'Fields',
         logo: {
@@ -147,7 +154,7 @@ const config = {
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
-        additionalLanguages: ["java", "scala"]
+        additionalLanguages: ['java', 'scala']
       },
     }),
 };

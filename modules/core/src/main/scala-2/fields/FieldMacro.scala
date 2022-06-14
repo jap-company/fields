@@ -26,9 +26,9 @@ class FieldMacro(val c: blackbox.Context) {
     @tailrec
     def go(tree: Tree, acc: List[String] = Nil): List[String] =
       tree match {
-        case This(_)                      => Nil
-        case Ident(TermName(name))        => if (includeIdent) name :: acc else acc
-        case Select(rest, name: TermName) => go(rest, name.toString :: acc)
+        case Ident(name: TermName)           => if (includeIdent) name.toString :: acc else acc
+        case Select(This(_), name: TermName) => if (includeIdent) name.toString :: acc else acc
+        case Select(rest, name: TermName)    => go(rest, name.toString :: acc)
         case Apply(Select(rest, TermName("apply")), List(Literal(Constant(name)))) => go(rest, name.toString :: acc)
         case Apply(Select(rest, TermName("apply")), List(Literal(Constant(name)))) => go(rest, name.toString :: acc)
         case _ => c.abort(c.enclosingPosition, FieldMacroMessage.selectorErrorMessage(title))

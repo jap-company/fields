@@ -111,8 +111,8 @@ object ValidationResult {
   /** Accumulate [[jap.fields.ValidationResult]] implementation */
   sealed abstract class Accumulate[+E]
   implicit object Accumulate extends AccumulateLike[Accumulate] {
-    case object Valid                                        extends Accumulate[Nothing]
-    case class Invalid[+E] private[fields] (errors: List[E]) extends Accumulate[E]
+    case object Valid                       extends Accumulate[Nothing]
+    case class Invalid[+E](errors: List[E]) extends Accumulate[E]
 
     def map[E, B](a: Accumulate[E])(f: E => B): Accumulate[B] =
       a match {

@@ -6,6 +6,8 @@ Fields is a zero-dependency Scala validation library.
 
 <Traits />
 
+[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner-direct-single.svg)](https://stand-with-ukraine.pp.ua)
+
 ## Getting started
 
 To get started with [sbt](https://scala-sbt.org), simply add the following line to your `build.sbt` file.
@@ -20,19 +22,29 @@ libraryDependencies ++= List(
 
 ## Code teaser
 
-```scala
+```scala mdoc
 import jap.fields._
 import jap.fields.DefaultAccumulateVM._
 
-case class User(username: String, password: String)
-case class Request(user: User)
-val request = Request(User("", ""))
+case class User(username: String, password: String, passwordRepeat: Option[String])
+case class UserFeatures(standsWithUkraine: Boolean)
+case class Request(user: User, features: UserFeatures)
+object Request {
+  implicit val policy: Policy[Request] =
+    Policy
+      .builder[Request]
+      .subRule(_.user.username)(_.nonBlank, _.minSize(4))
+      .subRule(_.user.password)(_.nonBlank, _.minSize(8), _.maxSize(30))
+      .subRule(_.user.password, _.user.passwordRepeat)((p, pr) => pr.some(_ === p))
+      .rule { request =>
+        val standsWithUkraineF = request.sub(_.features.standsWithUkraine)
+        standsWithUkraineF.ensure(_ == true, _.failMessage("https://github.com/vshymanskyy/StandWithUkraine/blob/main/docs/README.md"))
+      }
+      .build
+}
 
-val userF = Field.from(request.user)
-val usernameF = userF.sub(_.username)
-val passwordF = userF.sub(_.password)
-
-usernameF.nonBlank && passwordF.nonBlank
+val request  = Request(User("Ann", "1234", Some("")), UserFeatures(false))
+Field(request).validate
 ```
 
 This is just the basics of Fields, but there is still plenty of syntax to learn, see other Documentation sections.

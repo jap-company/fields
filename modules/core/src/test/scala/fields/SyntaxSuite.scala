@@ -1,9 +1,7 @@
 package jap.fields
 
-import FieldPathConversions._
 import DefaultAccumulateVM._
 import ValidationError._
-import scala.util.Properties
 
 class SyntaxSuite extends munit.FunSuite {
   test("compare Field[P] with P") {
@@ -20,16 +18,16 @@ class SyntaxSuite extends munit.FunSuite {
     val field = Field(4)
     val f8    = Field(8)
     val f2    = Field(2)
-    assertEquals((field > Field(8)).errors.head, field.greaterError(f8))
-    assertEquals((field >= Field(8)).errors.head, field.greaterEqualError(f8))
-    assertEquals((field < Field(2)).errors.head, field.lessError(f2))
-    assertEquals((field <= Field(2)).errors.head, field.lessEqualError(f2))
-    assertEquals((field === Field(2)).errors.head, field.equalError(f2))
+    assertEquals((field > f8).errors.head, field.greaterError(f8))
+    assertEquals((field >= f8).errors.head, field.greaterEqualError(f8))
+    assertEquals((field < f2).errors.head, field.lessError(f2))
+    assertEquals((field <= f2).errors.head, field.lessEqualError(f2))
+    assertEquals((field === f2).errors.head, field.equalError(f2))
     assertEquals((field !== field).errors.head, field.notEqualError(field))
   }
 
-  test("Scala 2: No FieldCompare") {
-    assume(Properties.versionNumberString.startsWith("3"))
+  test("Scala 2.12: No FieldCompare") {
+    assume(BuildInfo.scalaVersion.startsWith("2"))
     assertNoDiff(
       compileErrors("Field(2) === true"),
       """|error: Cannot compare Int with Boolean
@@ -40,18 +38,18 @@ class SyntaxSuite extends munit.FunSuite {
   }
 
   test("Scala 3: No FieldCompare") {
-    assume(Properties.versionNumberString.startsWith("3"))
+    assume(BuildInfo.scalaVersion.startsWith("3"))
     assertNoDiff(
       compileErrors("Field(2) === true"),
       """|error:
          |Cannot compare Int with Boolean.
          |I found:
          |
-         |    jap.fields.FieldCompare.defaultFieldCompare[P]
+         |    jap.fields.FieldCompare.valueCompare[P, C]
          |
-         |But method defaultFieldCompare in object FieldCompare does not match type jap.fields.FieldCompare[Int, Boolean].
+         |But method valueCompare in trait FieldCompareInstances1 does not match type jap.fields.FieldCompare[Int, Boolean].
          |Field(2) === true
-         |         ^       
+         |                ^
          |""".stripMargin,
     )
   }
@@ -92,17 +90,6 @@ class SyntaxSuite extends munit.FunSuite {
         NotEqual(FieldPath.raw("ageCache.userBalances.1"), "0"),
       ),
     )
-  }
-  test("Some.some") {
-    val someF = Field(Some(2))
-    assertEquals(
-      someF.some(_ > 10).errors,
-      Greater(someF, "10") :: Nil,
-    )
-  }
-  test("None.some") {
-    val noneF: Field[Option[Int]] = Field(None)
-    assertEquals(noneF.some(_ > 10).errors, Nil)
   }
   test("String.isEnum") {
     assert(Field("Red").isEnum(RGB).isValid)

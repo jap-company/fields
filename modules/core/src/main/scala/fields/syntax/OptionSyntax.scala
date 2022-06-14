@@ -20,6 +20,10 @@ package syntax
 trait OptionSyntax[F[_], VR[_], E] { M: ValidationModule[F, VR, E] =>
   implicit final def toOptionFieldOps[P](field: Field[Option[P]]): OptionFieldOps[P, F, VR, E] =
     new OptionFieldOps(field)
+
+  /** Unpacks `rule` from `Option` if `None` returns valid */
+  def someOrValid(rule: => Option[F[VR[E]]]): F[VR[E]] =
+    F.defer(rule.getOrElse(M.validF))
 }
 
 final class OptionFieldOps[P, F[_], VR[_], E](private val field: Field[Option[P]]) extends AnyVal {
@@ -40,10 +44,5 @@ final class OptionFieldOps[P, F[_], VR[_], E](private val field: Field[Option[P]
 
   /** Appies `check` to [[jap.fields.Field]]#value if it is [[scala.Some]] or returns valid */
   def some(check: Field[P] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
-    M.F.defer(
-      field.value match {
-        case Some(value) => check(Field(field.path, value))
-        case None        => M.validF
-      }
-    )
+    M.F.defer(field.option.fold(M.validF)(check))
 }

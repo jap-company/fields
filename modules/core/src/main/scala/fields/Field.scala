@@ -22,10 +22,10 @@ final case class Field[+P](
     value: P,
 ) {
 
-  /** Returns name of the [[jap.fields.Field]] */
+  /** Returns [[jap.fields.FieldPath.name]] of `path` */
   val name = path.name
 
-  /** Returns full path of the field. It is dot-separated path of this [[jap.fields.Field]] */
+  /** Returns [[jap.fields.FieldPath.full]] of `path` */
   val fullPath = path.full
 
   /** Creates new [[jap.fields.Field]] with provided `value` and `name`. Prepends current fields `path` to this field
@@ -39,25 +39,28 @@ final case class Field[+P](
   def selectSub[S](name: String, selector: P => S): Field[S] = Field(path + name, selector(value))
 
   /** Renames this [[jap.fields.Field]]. Changes last `path` part aka name. */
-  def named(name: String): Field[P] = Field(path.named(name), value)
+  def named(name: String): Field[P] = withPath(path.named(name))
 
-  /** Change [[Field.path]] */
-  def withPath(newPath: FieldPath): Field[P] = Field(newPath, value)
+  /** Change `path` */
+  def withPath(newPath: FieldPath): Field[P] = copy(path = newPath)
 
-  /** Change [[Field.value]] */
-  def withValue[V](newValue: V): Field[V] = Field(path, newValue)
+  /** Change `value` */
+  def withValue[V](newValue: V): Field[V] = copy(value = newValue)
 
-  /** Map [[Field.value]] */
+  /** Maps `value` */
   def map[B](f: P => B): Field[B] = withValue(f(value))
 
-  /** Map [[Field.path]] */
+  /** Maps `path` */
   def mapPath(f: FieldPath => FieldPath): Field[P] = withPath(f(this.path))
 
-  /** Given [[Field.value]] type is Tuple, get first tuple element */
+  /** Gets first tuple element of `value`. Given [[P]] is Tuple */
   def first[P1, P2](implicit ev: P <:< (P1, P2)): Field[P1] = map(ev(_)._1)
 
-  /** Given [[Field.value]] type is Tuple, get second tuple element */
+  /** Gets second tuple element of `value`. Given [[P]] is Tuple */
   def second[P1, P2](implicit ev: P <:< (P1, P2)): Field[P2] = map(ev(_)._2)
+
+  /** Turns Option on `value` into Option on `jap.fields.Field`. Given [[P]] i `Option[V]` */
+  def option[V](implicit ev: P <:< Option[V]): Option[Field[V]] = ev(value).map(withValue)
 
   override def toString = fullPath + ":" + value
 }

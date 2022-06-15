@@ -10,24 +10,40 @@ Various ways to create and transform `Field` is described in [Syntax](#syntax) s
 
 ## Syntax
 
-```scala
-val path: FieldPath = ???
-Field(path, request.name) //Field(path, request.name) Using path and value
-Field(request.name) //Field(FieldPath.root, request.name) Using value without path
-Field.from(request.name) //Field(FieldPath("request", "name"), request.name) Innherit path from field selects
-Field.sub(request.name) //Field(FieldPath("name"), request.name) Innherit path from field selects and drops first path
+### Create
 
-val requestF = Field.from(request)
-requestF.sub(_.name) // Derive subfield using field selector
-requestF.provideSub("name", request.name) // Manual subfield with provided value
-requestF.selectSub("name", _.name) // Manual subfield with value selector
-requestF.map(_.name) //Map only field value
-requestF.mapPath(_.toUpperCase) //Map only field path
-requestF.named("apiRequest")//Changes name of field - last FieldPath part
-requestF.withPath(???)//Set Field path
-requestF.withValue(???)//Set Field value
+```scala mdoc:width=100
+import jap.fields._
+import jap.fields.DefaultAccumulateVM._
 
-val tupleF = Field(1 -> "2")
-tupleF.first//Field(tupleF.path, 1)
-tupleF.second//Field(tupleF.path, "2")
+case class Request(name: String)
+val request = Request("Ann")
+Field(request.name)
+Field(FieldPath("request", "name"),request.name)
+Field.from(request.name)
+Field.sub(request.name)
+```
+
+### Transform
+
+```scala mdoc:width=100
+case class B()
+case class A(b: B)
+val a = Field(FieldPath("a"), A(B()))
+a.sub(_.b)
+a.provideSub("b", a.value.b)
+a.selectSub("b", _.b)
+a.map(_.b)
+a.mapPath(_ + "A")
+a.named("A")
+a.withPath(FieldPath("b"))
+a.withValue(3)
+```
+
+### Special
+
+```scala mdoc:width=100
+Field(1 -> "2").first
+Field(1 -> "2").second
+Field(Option(1)).option
 ```

@@ -17,6 +17,7 @@
 package jap.fields
 package syntax
 
+object ValidationResultSyntax extends ValidationResultSyntax
 trait ValidationResultSyntax {
   implicit final def toVROps[VR[_], E](vr: VR[E]): VROps[VR, E]                                 = new VROps(vr)
   implicit final def toVRIdOps[E](error: E): VRIdOps[E]                                         = new VRIdOps(error)
@@ -74,4 +75,11 @@ final class VROps[VR[_], E](private val vr: VR[E]) extends AnyVal {
 
   /** See [[ValidationResult.unless]] */
   def unless(cond: Boolean)(implicit VR: ValidationResult[VR]): VR[E] = VR.unless(cond)(vr)
+
+  /** See [[ValidationResult.asError]] */
+  def asError(error: E)(implicit VR: ValidationResult[VR]) = VR.asError(vr)(error)
+
+  /** See [[ValidationResult.asError]] */
+  def asInvalid(invalid: VR[E])(implicit VR: ValidationResult[VR]) = VR.asInvalid(vr)(invalid)
+
 }

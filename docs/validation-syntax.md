@@ -4,101 +4,121 @@ Here is complete list of predefined validation syntax.
 
 ## Generic
 
-```scala
-val request: Request = ???
-val requestF: Field[Request] = Field(request)
-requestF.assertTrue(false, _.invalidError)
-requestF.assert(_.isValid, _.invalidError)
-requestF.check(f => Accumulate.invalid(f.invalidError).unless(f.value.isValid))
-def isRequestValidApi: zio.Task[Boolean] = ???
-requestF.assertF(isRequestValidApi, _.invalid)
-requestF.checkF(f => isRequestValidApi(f.value).map(Accumulate.unless(_)(c.custom("err"))))
-requestF === request
-requestF equalTo request
-requestF !== request
-requestF notEqualTo request
-requestF === requestF
-requestF equalTo requestF
-requestF !== requestF
-requestF notEqualTo requestF
-requestF in List(request)
-requestF.all(_ === request, !== request) // runs all validations and combines them using and
-requestF.any(_ === request, !== request) // runs all validations and combines them using or
-requestF.when(true)(_ === request) // runs if cond is true
-requestF.unless(false)(_ === request) // runs if cond is false
-requestF validate //uses ValidationPolicy
+```scala mdoc:width=100
+import jap.fields._
+import jap.fields.DefaultAccumulateVM._
+import jap.fields.FieldPathConversions._
+val field: Field[Int] = Field("1", 1)
+ensure(false, field.failInvalid)
+field.ensure(_ == 3, _.failInvalid)
+field.assert(_ == 3, _.invalidError)
+field.check(f => if(false) f.failMessage("A") else f.failMessage("B"))
+field equalTo 2
+field notEqualTo 1
+field equalTo Field("2", 2)
+field notEqualTo Field("1", 1)
+field in List(2, 3)
+field.all(_ === 2, _ !== 1)
+field.any(_ === 2, _ !== 3)
+field.when(false)(_ !== field.value)
+field.unless(true)(_ !== field.value)
+implicit val policy: Policy[Int] = _ < 0
+field.validate
 ```
 
 ## Boolean
 
-```scala
-val boolF: Field[Boolean] = ???
-boolF.isTrue
-boolF.isFalse
+```scala mdoc:width=100
+Field("false", false).isTrue
+Field("true", true).isFalse
 ```
 
-## Numeric
+## Ordering
 
-```scala
-val intF: Field[Int] = ???
-infF.isBetween(0, 5)
-infF < 10
-infF lt 10
-infF <= 10
-infF lte 10
-infF >= 10
-infF gte 10
-infF > 10
-infF gt 10
+```scala mdoc:width=100
+import java.time.LocalDateTime
+val now = LocalDateTime.now
+val nowF = Field.from(now)
+val tomorrow = now.plusDays(1)
+val yesterday = now.minusDays(1)
+
+nowF.isBetween(tomorrow, yesterday)
+nowF < yesterday
+nowF <= yesterday
+nowF >= tomorrow
+nowF > tomorrow
 ```
 
 ## Option
 
-```scala
-val optionF: Field[Option[Int]] = ???
-optionF.isDefined
-optionF.isEmpty
-optionF.some(_ > 10)
+```scala mdoc:width=100
+Field(None).isDefined
+val someF: Field[Option[Int]] = Field(FieldPath("a"), Some(5))
+someF.isEmpty
+someF.some(_ > 10)
+
+someOrValid {
+    for {
+        option <- someF.option
+        other <- Field(FieldPath("b"), Some(2)).option
+    } yield option < other
+}
 ```
 
 ## String
 
-```scala
-val stringF: Field[String] = ???
+```scala mdoc:width=100
+val stringF: Field[String] = Field("Ann")
 stringF.startsWith("sca")
 stringF.endsWith("la")
-stringF.nonEmpty
-stringF.nonBlank
+Field("").nonEmpty
+Field("").nonBlank
 stringF.minSize(5)
-stringF.maxSize(5)
+stringF.maxSize(1)
 stringF.blank
 stringF.matches("scala".r)
 stringF.matches("scala")
-stringF.isEnum(ScalaEnumeration)
-stringF.isJEnum(JavaEnumeration.values())
 ```
 
 ## Iterable
 
-```scala
-val listF: Field[List[Int]] = ???
+```scala mdoc:width=100
+val listF: Field[List[Int]] = Field(List(1, 12))
 listF.each(_ > 10)
-listF.any(_ > 10)
-listF.nonEmpty
-listF.minSize(1)
-listF.maxSize(10)
+listF.any(_ === 10)
+Field(List()).nonEmpty
+listF.minSize(3)
+listF.maxSize(1)
 ```
 
 ## Map
 
-```scala
-val mapF: Field[Map[String, Int]] = ???
-mapF.minSize(1)
-mapF.maxSize(10)
-mapF.each(_._2 > 3)
+```scala mdoc:width=100
+val mapF: Field[Map[String, Int]] = Field(Map("" -> 2, "2" -> 2))
+mapF.minSize(4)
+mapF.maxSize(1)
+mapF.each(_.second > 4)
 mapF.eachKey(_.nonEmpty)
-mapF.eachValue(_ > 3)
-mapF.any(_._2 > 3)
-mapF.anyKey(_.nonEmpty)
-mapF.anyValue(_ > 3)
+mapF.eachValue(_ > 4)
+mapF.any(_.second > 4)
+mapF.anyKey(_ === "4")
+mapF.anyValue(_ > 4)
+```
+
+## Effectful
+
+```scala mdoc:reset:width=100
+import jap.fields._
+import jap.fields.ZIOInterop._
+import zio._
+object TaskVM extends AccumulateVM[Task, ValidationError]
+import TaskVM._
+
+def unsafeRun[A](task: Task[A]) = Runtime.global.unsafeRun(task)
+def isPositiveApi(number: Int): zio.Task[Boolean] = zio.UIO(number > 0)
+
+val field = Field(FieldPath("size"), -1)
+unsafeRun(field.ensureF(isPositiveApi, _.failMessage("API: NOT POSITIVE")))
+unsafeRun(field.assertF(isPositiveApi, _.messageError("API: NOT POSITIVE")))
+unsafeRun(ensureF(isPositiveApi(field.value), field.failMessage("API: NOT POSITIVE")))
 ```

@@ -108,15 +108,15 @@ val updateDocsVariables = taskKey[Unit]("Update docs variables")
 lazy val `fields-docs`  =
   project
     .settings(scalaSettings)
-    .settings(crossScalaVersions := List(V.Scala213))
+    .settings(crossScalaVersions := Nil)
     .settings(
       moduleName                                 := "fields-docs",
       mdocVariables                              := Map(
         "version"              -> latestVersion.value,
         "organization"         -> (LocalRootProject / organization).value,
         "coreModuleName"       -> (`fields-core` / moduleName).value,
-        "zioModuleName"        -> (`fields-cats` / moduleName).value,
-        "catsModuleName"       -> (`fields-zio` / moduleName).value,
+        "zioModuleName"        -> (`fields-zio` / moduleName).value,
+        "catsModuleName"       -> (`fields-cats` / moduleName).value,
         "scalaPublishVersions" -> {
           val minorVersions = (`fields-core` / crossScalaVersions).value.map(CrossVersion.binaryScalaVersion(_))
           if (minorVersions.size <= 2) minorVersions.mkString(" and ")

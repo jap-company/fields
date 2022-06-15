@@ -6,14 +6,35 @@ Various ways to create and transform `FieldPath` is described in [Syntax](#synta
 
 ## Syntax
 
-```scala
-FieldPath.root
+### Create
+
+```scala mdoc
+import jap.fields._
+
+FieldPath.Root
 FieldPath("request", "name")
 FieldPath(List("request", "name"))
 FieldPath.raw("request.name")
+```
 
-//Implicit Conversion
-val path: FieldPath = nameF
-val path: FieldPath = "name"
-val path: FieldPath = List("request", "name")
+### Operations
+
+```scala mdoc
+val path = FieldPath("a", "b")
+path.isRoot
+path.full
+path.name
+path.named("c")
+path ++ FieldPath("d")
+path + "d"
+```
+
+### Conversions
+
+```scala mdoc
+import jap.fields.FieldPathConversions._
+
+Field(FieldPath("name"), ""): FieldPath
+"name": FieldPath
+List("request", "name"): FieldPath
 ```

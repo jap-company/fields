@@ -26,7 +26,6 @@
 }
 
 .projectTitle {
-  color: #122932;
   margin: 0.3em 0;
   font-size: 300%;
   line-height: 1em;
@@ -43,12 +42,18 @@
   justify-content: center;
 }
 
-.projectTitle > small {
+.projectTitle > h1,
+.projectTitle > h2 {
   display: block;
   font-weight: 400;
   font-size: 50%;
   line-height: 1em;
   margin: 0.4em 0 1.3em;
+}
+
+.projectName > h1 {
+  font-size: inherit;
+  margin: 0;
 }
 
 .quicklinks > a {

@@ -60,7 +60,7 @@ final class StringFieldOps[F[_], VR[_], E](private val field: Field[String]) ext
 
   /** Validates that [[jap.fields.Field]]#value is blank */
   def blank(implicit M: ValidationModule[F, VR, E], FW: FailWithNonEmpty[E]) =
-    M.fieldAssert[String](field, _.nonEmpty, FW.nonEmpty)
+    M.fieldAssert[String](field, _.isEmpty, FW.nonEmpty)
 
   /** Validates that [[jap.fields.Field]]#value matches Regexp */
   def matches(r: String)(implicit M: ValidationModule[F, VR, E], FW: FailWithMessage[E]): F[VR[E]] =

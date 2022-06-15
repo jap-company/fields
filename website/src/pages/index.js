@@ -29,17 +29,17 @@ export default function Home() {
   const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
-      title={siteConfig.title}
+      title={`${siteConfig.title} - ${siteConfig.tagline}`}
       description={siteConfig.tagline}
     >
       <div className={styles.homeContainer}>
-        <h2 className={styles.projectTitle}>
+        <div className={styles.projectTitle}>
           <span className={styles.projectName}>
-            <img className={styles.projectTitleLogo} src={siteConfig.customFields.titleIcon} />
-            <span>{siteConfig.title}</span>
+            <img className={styles.projectTitleLogo} src={siteConfig.customFields.titleIcon} alt="Jap Logo" />
+            <h1>{siteConfig.title}</h1>
           </span>
-          <small>{siteConfig.tagline}</small>
-        </h2>
+          <h2>{siteConfig.tagline}</h2>
+        </div>
 
         <div className={styles.quicklinks}>
           <Link to="docs/overview" className="button button--primary" >

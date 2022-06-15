@@ -30,8 +30,8 @@ class SelectorMacro[Q <: Quotes](using val q: Q) {
     @tailrec
     def go(term: Term, acc: List[String] = Nil): List[String] =
       term match {
-        case This(_)                                                          => Nil
         case Ident(name)                                                      => if (includeIdent) name :: acc else acc
+        case Select(This(_), name)                                            => if (includeIdent) name :: acc else acc
         case Select(rest, name)                                               => go(rest, name.toString :: acc)
         case Inlined(_, _, rest)                                              => go(rest, acc)
         case Apply(Select(rest, "apply"), List(Literal(IntConstant(index))))  => go(rest, index.toString :: acc)

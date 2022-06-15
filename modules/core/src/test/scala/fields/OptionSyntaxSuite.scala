@@ -3,7 +3,6 @@ package jap.fields
 import FieldPathConversions._
 import DefaultAccumulateVM._
 import ValidationError._
-import scala.util.Properties
 
 class OptionSyntaxSuite extends munit.FunSuite {
   test("Option.some") {

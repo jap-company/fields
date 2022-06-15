@@ -61,6 +61,10 @@ const config = {
             require.resolve('./src/css/custom.css'),
           ],
         },
+        gtag: {
+          trackingID: 'G-GQTXEF7061',
+          anonymizeIP: true,
+        },
       }),
     ],
   ],

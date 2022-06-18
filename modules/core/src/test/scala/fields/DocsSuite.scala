@@ -5,7 +5,6 @@ class DocsSuite extends munit.FunSuite {
   test("Code teaser") {
     import DefaultAccumulateVM._
     import ValidationError._
-
     case class User(username: String, password: String)
     case class Request(user: User)
     object Request {

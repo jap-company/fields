@@ -104,11 +104,11 @@ final class FieldOps[P, F[_], VR[_], E](private val field: Field[P]) extends Any
       M: ValidationModule[F, VR, E]
   ): F[VR[E]] = M.fieldAssertF(field, cond, error)
 
-  /** See [[ValidationModule.fieldCheck]] */
+  /** Returns Suspended Outcome of applying `f` to `field` */
   def check(f: Field[P] => VR[E])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
     M.F.suspend(f(field))
 
-  /** See [[ValidationModule.fieldCheckF]] */
+  /** Returns Defered Outcome of applying `f` to `field` */
   def checkF(f: Field[P] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
     M.F.defer(f(field))
 

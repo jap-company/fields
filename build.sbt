@@ -148,10 +148,10 @@ lazy val `fields-docs`  =
         .value,
        // format: off
        ScalaUnidoc / unidoc / scalacOptions ++= Seq(
-         "-doc-source-url", s"https://github.com/jap-company/fields/tree/v${version.value}€{FILE_PATH}.scala",
+         "-doc-source-url", s"https://github.com/jap-company/fields/tree/v${latestVersion.value}€{FILE_PATH}.scala",
          "-sourcepath", (LocalRootProject / baseDirectory).value.getAbsolutePath,
          "-doc-title", "Fields",
-         "-doc-version", s"v${version.value}",
+         "-doc-version", s"v${latestVersion.value}",
          "-doc-logo", (LocalRootProject / baseDirectory).value.getAbsolutePath + "/website/static/img/logo.svg",
        )
        // format: on

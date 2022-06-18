@@ -19,21 +19,21 @@ package jap.fields
 import scala.annotation.implicitNotFound
 
 @implicitNotFound("To use this operation you need to have FailWithInvalid[${E}] in scope")
-trait FailWithInvalid[E]  { def invalid[A](field: Field[A]): E                                         }
+trait FailWithInvalid[E]      { def invalid[A](field: Field[A]): E                                         }
 @implicitNotFound("To use this operation you need to have FailWithEmpty[${E}] in scope")
-trait FailWithEmpty[E]    { def empty[A](field: Field[A]): E                                           }
+trait FailWithEmpty[E]        { def empty[A](field: Field[A]): E                                           }
 @implicitNotFound("To use this operation you need to have FailWithNonEmpty[${E}] in scope")
-trait FailWithNonEmpty[E] { def nonEmpty[A](field: Field[A]): E                                        }
+trait FailWithNonEmpty[E]     { def nonEmpty[A](field: Field[A]): E                                        }
 @implicitNotFound("To use this operation you need to have FailWithMinSize[${E}] in scope")
-trait FailWithMinSize[E]  { def minSize[A](size: Int)(field: Field[A]): E                              }
+trait FailWithMinSize[E]      { def minSize[A](size: Int)(field: Field[A]): E                              }
 @implicitNotFound("To use this operation you need to have FailWithMaxSize[${E}] in scope")
-trait FailWithMaxSize[E]  { def maxSize[A](size: Int)(field: Field[A]): E                              }
+trait FailWithMaxSize[E]      { def maxSize[A](size: Int)(field: Field[A]): E                              }
 @implicitNotFound("To use this operation you need to have FailWithOneOf[${E}] in scope")
-trait FailWithOneOf[E]    { def oneOf[A](variants: Seq[A])(field: Field[A]): E                         }
+trait FailWithOneOf[E]        { def oneOf[A](variants: Seq[A])(field: Field[A]): E                         }
 @implicitNotFound("To use this operation you need to have FailWithMessage[${E}] in scope")
-trait FailWithMessage[E]  { def message[A](error: String, message: Option[String])(field: Field[A]): E }
+trait FailWithMessage[E]      { def message[A](error: String, message: Option[String])(field: Field[A]): E }
 @implicitNotFound("To use this operation you need to have FailWithCompare[${E}] in scope")
-trait FailWithCompare[E]  {
+trait FailWithCompare[E]      {
   def compare[A](operation: CompareOperation, compared: String)(field: Field[A]): E
 
   def compare[A, C](operation: CompareOperation, compared: C)(field: Field[A])(implicit C: FieldCompare[A, C]): E =
@@ -57,8 +57,17 @@ trait FailWithCompare[E]  {
   def greater[A, C](compared: C)(field: Field[A])(implicit C: FieldCompare[A, C]): E =
     compare(CompareOperation.Greater, compared)(field)
 }
-sealed trait CompareOperation
-object CompareOperation   {
+sealed trait CompareOperation {
+  def constraint: String = this match {
+    case CompareOperation.Equal        => ValidationTypes.Equal
+    case CompareOperation.NotEqual     => ValidationTypes.NotEqual
+    case CompareOperation.Greater      => ValidationTypes.Greater
+    case CompareOperation.GreaterEqual => ValidationTypes.GreaterEqual
+    case CompareOperation.Less         => ValidationTypes.Less
+    case CompareOperation.LessEqual    => ValidationTypes.LessEqual
+  }
+}
+object CompareOperation       {
   case object Equal        extends CompareOperation
   case object NotEqual     extends CompareOperation
   case object Greater      extends CompareOperation

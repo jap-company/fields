@@ -60,7 +60,7 @@ object FieldPath {
   def apply(parts: String*): FieldPath = FieldPath(parts.toList)
 
   /** Parse [[jap.fields.FieldPath]] from dot-separated `path` string */
-  def raw(path: String) = FieldPath(path.split('.').toList)
+  def fromRaw(path: String) = FieldPath(path.split('.').toList)
 
   /** Create [[jap.fields.FieldPath]] from `String` */
   def fromString(path: String): FieldPath = FieldPath(path :: Nil)
@@ -75,7 +75,7 @@ object FieldPath {
 object FieldPathConversions {
 
   /** Conversion for [[jap.fields.FieldPath.fromString]] */
-  implicit def fromString(path: String): FieldPath = FieldPath.fromString(path)
+  implicit def fromRaw(path: String): FieldPath = FieldPath.fromRaw(path)
 
   /** Conversion for [[jap.fields.FieldPath.fromList]] */
   implicit def fromList(path: List[String]): FieldPath = FieldPath.fromList(path)

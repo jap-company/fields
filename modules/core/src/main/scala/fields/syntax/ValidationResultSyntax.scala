@@ -17,69 +17,71 @@
 package jap.fields
 package syntax
 
-object ValidationResultSyntax extends ValidationResultSyntax
-trait ValidationResultSyntax {
-  implicit final def toVROps[VR[_], E](vr: VR[E]): VROps[VR, E]                                 = new VROps(vr)
-  implicit final def toVRIdOps[E](error: E): VRIdOps[E]                                         = new VRIdOps(error)
-  implicit final def toVRSequenceOps[VR[_], E](iterable: Iterable[VR[E]]): VRSequenceOps[VR, E] =
-    new VRSequenceOps(iterable)
+import typeclass.Validated
+
+object ValidatedSyntax extends ValidatedSyntax
+trait ValidatedSyntax {
+  implicit final def toValidatedIdOps[E](error: E): ValidatedIdOps[E]      = new ValidatedIdOps(error)
+  implicit final def toValidatedOps[V[_], E](vr: V[E]): ValidatedOps[V, E] = new ValidatedOps(vr)
+  implicit final def toValidatedSeqOps[V[_], E](iterable: Iterable[V[E]]): ValidatedSeqOps[V, E] =
+    new ValidatedSeqOps(iterable)
 }
 
-final class VRSequenceOps[VR[_], E](private val iterable: Iterable[VR[E]]) extends AnyVal {
+final class ValidatedSeqOps[V[_], E](private val iterable: Iterable[V[E]]) extends AnyVal {
 
-  /** See [[ValidationResult.sequence]] */
-  def sequence(implicit VR: ValidationResult[VR]): VR[E] = VR.sequence(iterable.toList)
+  /** See [[jap.fields.typeclass.Validated.sequence]] */
+  def sequence(implicit V: Validated[V]): V[E] = V.sequence(iterable.toList)
 
-  /** See [[ValidationResult.andAll]] */
-  def andAll(implicit VR: ValidationResult[VR]): VR[E] = VR.andAll(iterable.toList)
+  /** See [[jap.fields.typeclass.Validated.andAll]] */
+  def andAll(implicit V: Validated[V]): V[E] = V.andAll(iterable.toList)
 
-  /** See [[ValidationResult.orAll]] */
-  def orAll(implicit VR: ValidationResult[VR]): VR[E] = VR.orAll(iterable.toList)
+  /** See [[jap.fields.typeclass.Validated.orAll]] */
+  def orAll(implicit V: Validated[V]): V[E] = V.orAll(iterable.toList)
 }
 
-final class VRIdOps[E](private val error: E) extends AnyVal {
-  def invalid[VR[_]](implicit VR: ValidationResult[VR]): VR[E] = VR.invalid(error)
+final class ValidatedIdOps[E](private val error: E) extends AnyVal {
+  def invalid[V[_]](implicit V: Validated[V]): V[E] = V.invalid(error)
 }
 
-final class VROps[VR[_], E](private val vr: VR[E]) extends AnyVal {
+final class ValidatedOps[V[_], E](private val vr: V[E]) extends AnyVal {
 
-  /** See [[ValidationResult.isInvalid]] */
-  def isInvalid(implicit VR: ValidationResult[VR]): Boolean = VR.isInvalid(vr)
+  /** See [[jap.fields.typeclass.Validated.isInvalid]] */
+  def isInvalid(implicit V: Validated[V]): Boolean = V.isInvalid(vr)
 
-  /** See [[ValidationResult.isValid]] */
-  def isValid(implicit VR: ValidationResult[VR]): Boolean = VR.isValid(vr)
+  /** See [[jap.fields.typeclass.Validated.isValid]] */
+  def isValid(implicit V: Validated[V]): Boolean = V.isValid(vr)
 
-  /** See [[ValidationResult.and]] */
-  def and(that: VR[E])(implicit VR: ValidationResult[VR]): VR[E] = VR.and(vr, that)
+  /** See [[jap.fields.typeclass.Validated.and]] */
+  def and(that: V[E])(implicit V: Validated[V]): V[E] = V.and(vr, that)
 
-  /** See [[ValidationResult.and]] */
-  def &&(that: VR[E])(implicit VR: ValidationResult[VR]): VR[E] = VR.and(vr, that)
+  /** See [[jap.fields.typeclass.Validated.and]] */
+  def &&(that: V[E])(implicit V: Validated[V]): V[E] = V.and(vr, that)
 
-  /** See [[ValidationResult.or]] */
-  def or(that: VR[E])(implicit VR: ValidationResult[VR]): VR[E] = VR.or(vr, that)
+  /** See [[jap.fields.typeclass.Validated.or]] */
+  def or(that: V[E])(implicit V: Validated[V]): V[E] = V.or(vr, that)
 
-  /** See [[ValidationResult.or]] */
-  def ||(that: VR[E])(implicit VR: ValidationResult[VR]): VR[E] = VR.or(vr, that)
+  /** See [[jap.fields.typeclass.Validated.or]] */
+  def ||(that: V[E])(implicit V: Validated[V]): V[E] = V.or(vr, that)
 
-  /** See [[ValidationResult.errors]] */
-  def errors(implicit VR: ValidationResult[VR]): List[E] = VR.errors(vr)
+  /** See [[jap.fields.typeclass.Validated.errors]] */
+  def errors(implicit V: Validated[V]): List[E] = V.errors(vr)
 
-  /** See [[ValidationResult.when]] */
-  def when(cond: Boolean)(implicit VR: ValidationResult[VR]): VR[E] = VR.when(cond)(vr)
+  /** See [[jap.fields.typeclass.Validated.when]] */
+  def when(cond: Boolean)(implicit V: Validated[V]): V[E] = V.when(cond)(vr)
 
-  /** See [[ValidationResult.whenValid]] */
-  def whenValid(b: => VR[E])(implicit VR: ValidationResult[VR]): VR[E] = VR.whenValid(vr)(b)
+  /** See [[jap.fields.typeclass.Validated.whenValid]] */
+  def whenValid(b: => V[E])(implicit V: Validated[V]): V[E] = V.whenValid(vr)(b)
 
-  /** See [[ValidationResult.whenValid]] */
-  def whenInvalid(f: VR[E] => VR[E])(implicit VR: ValidationResult[VR]): VR[E] = VR.whenInvalid(vr)(f)
+  /** See [[jap.fields.typeclass.Validated.whenValid]] */
+  def whenInvalid(f: V[E] => V[E])(implicit V: Validated[V]): V[E] = V.whenInvalid(vr)(f)
 
-  /** See [[ValidationResult.unless]] */
-  def unless(cond: Boolean)(implicit VR: ValidationResult[VR]): VR[E] = VR.unless(cond)(vr)
+  /** See [[jap.fields.typeclass.Validated.unless]] */
+  def unless(cond: Boolean)(implicit V: Validated[V]): V[E] = V.unless(cond)(vr)
 
-  /** See [[ValidationResult.asError]] */
-  def asError(error: E)(implicit VR: ValidationResult[VR]) = VR.asError(vr)(error)
+  /** See [[jap.fields.typeclass.Validated.asError]] */
+  def asError(error: E)(implicit V: Validated[V]) = V.asError(vr)(error)
 
-  /** See [[ValidationResult.asError]] */
-  def asInvalid(invalid: VR[E])(implicit VR: ValidationResult[VR]) = VR.asInvalid(vr)(invalid)
+  /** See [[jap.fields.typeclass.Validated.asError]] */
+  def asInvalid(invalid: V[E])(implicit V: Validated[V]) = V.asInvalid(vr)(invalid)
 
 }

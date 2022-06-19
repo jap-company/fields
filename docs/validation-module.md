@@ -1,17 +1,20 @@
-# ValidationModule
+# Module
 
 All syntax comes from ValidationModule and if default ones do not suit your needs you can define custom.
 
-User can use any ValidationEffect, ValidationResult and Error types that has corresponding typeclass instances.
+User can use any Effect, Validated and Error types that has corresponding typeclass instances.
 
 ```scala mdoc
 import jap.fields._
+import jap.fields.data._
+import jap.fields.error._
+import jap.fields.typeclass._
 // Note: this expects you to have such implicits:
-// ValidationEffect[ValidationEffect.Sync]
-// ValidationResult[Accumulate]
-object AccumulateMessage extends ValidationModule[ValidationEffect.Sync, ValidationResult.Accumulate, ValidationError.Message]
-object AccumulateError extends AccumulateVM[ValidationEffect.Sync, ValidationError]
-object FailFastError extends FailFastVM[ValidationEffect.Sync, ValidationError]
+// Effect[Effect.Sync]
+// Validated[Accumulate]
+object AccumulateMessage extends ValidationModule[Effect.Sync, Accumulate, ValidationMessage]
+object AccumulateError extends AccumulateVM[Effect.Sync, ValidationError]
+object FailFastError extends FailFastVM[Effect.Sync, ValidationError]
 ```
 
 Then you just import all from ValidationModule

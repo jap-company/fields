@@ -1,16 +1,18 @@
 package jap.fields
 package examples
 
-import jap.fields.ZIOInterop.*
-import jap.fields.*
+import cats.conversions.variance
 import jap.fields.FieldPathConversions.*
+import jap.fields.ZioInterop.*
+import jap.fields.*
+import jap.fields.error.*
+import jap.fields.fail.*
+import jap.fields.typeclass.*
 import zio.*
 import zio.console.*
 
 import java.time.*
 import java.util.UUID
-import jap.fields.ValidationResult.Accumulate
-import cats.conversions.variance
 
 /** Simple ADT that we will interpret to construct localised message */
 sealed trait TranslatedMessage
@@ -29,7 +31,7 @@ object TranslatedMessage {
 final case class TranslatedError(path: FieldPath, error: String, message: TranslatedMessage)
 object TranslatedError   {
   import TranslatedMessage._
-  implicit object FailWithLocalisedError extends FailWith[TranslatedError] {
+  implicit object FailWithLocalisedError extends FailWith[TranslatedError, Nothing] {
     def invalid[A](field: Field[A]): TranslatedError =
       TranslatedError(field, ValidationTypes.Invalid, Key(ValidationTypes.Invalid))
 

@@ -6,8 +6,8 @@ class FieldPathSuite extends munit.FunSuite {
     assertEquals(FieldPath("1", "2", "3").name, "3")
   }
 
-  test("FieldPath.raw") {
-    assertEquals(FieldPath.raw("a.b.c"), FieldPath(List("a", "b", "c")))
+  test("FieldPath.fromRaw") {
+    assertEquals(FieldPath.fromRaw("a.b.c"), FieldPath(List("a", "b", "c")))
   }
 
   List(

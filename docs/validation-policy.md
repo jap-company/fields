@@ -3,8 +3,8 @@
 Encapsulates `Field` validation logic. Also there is `ValidationPolicyBuilder` which provides convenient syntax to define `Field` validation logic
 
 ```scala
-trait ValidationPolicy[P, F[_], VR[_], E] { self =>
-  def validate(field: Field[P]): F[VR[E]]
+trait ValidationPolicy[P, F[_], V[_], E] { self =>
+  def validate(field: Field[P]): Rule[F, V, E]
 }
 ```
 
@@ -29,5 +29,6 @@ object Request {
         .subRule(_.age, _.hasParrot)((age, hasParrot) => age > 48 || (age > 22 && hasParrot.isTrue)) // 2 fields rule
         .build
 }
-Field(Request("", Email(""), 23, true)).validate // This will use implicit policy to validate
+Field(Request("", Email(""), 23, true)).validate.effect // This will use implicit policy to validate
+Field(Request("1234", Email("ann@gmail.com"), 23, true)).validateEither
 ```

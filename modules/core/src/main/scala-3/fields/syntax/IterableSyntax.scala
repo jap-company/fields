@@ -20,40 +20,45 @@ package syntax
 import scala.annotation.nowarn
 import scala.collection.generic.IsIterable
 
-trait IterableSyntax[F[_], VR[_], E] { self: ValidationModule[F, VR, E] =>
-  extension [P](field: Field[P])(using II: IsIterable[P], M: ValidationModule[F, VR, E]) {
+import typeclass._
+import fail._
+
+trait ModuleIterableSyntax[F[_], V[_], E] { self: ValidationModule[F, V, E] =>
+  extension [P](field: Field[P])(using II: IsIterable[P], F: Effect[F], V: Validated[V]) {
 
     /** Checks that collection is empty */
-    def isEmpty(using FW: FailWithNonEmpty[E]): F[VR[E]] = M.fieldAssert(field, II(_).isEmpty, FW.nonEmpty)
+    def isEmpty(using FW: FailWithNonEmpty[E, P]): Rule[F, V, E] =
+      Rule.ensure(field.failNonEmpty)(II(field.value).isEmpty)
 
     /** Checks that collection is not empty */
-    def nonEmpty(using FW: FailWithEmpty[E]): F[VR[E]] = M.fieldAssert(field, II(_).nonEmpty, FW.empty)
+    def nonEmpty(using FW: FailWithEmpty[E, P]): Rule[F, V, E] =
+      Rule.ensure(field.failEmpty)(II(field.value).nonEmpty)
 
     /** Checks that collection minimum size is `min` */
-    def minSize(min: Int)(using FW: FailWithMinSize[E]): F[VR[E]] =
-      M.fieldAssert(field, II(_).size >= min, FW.minSize(min))
+    def minSize(min: Int)(using FW: FailWithMinSize[E, P]): Rule[F, V, E] =
+      Rule.ensure(field.failMinSize(min))(II(field.value).size >= min)
 
     /** Checks that collection maximum size is `max` */
-    def maxSize(max: Int)(using FW: FailWithMaxSize[E]): F[VR[E]] =
-      M.fieldAssert(field, II(_).size <= max, FW.maxSize(max))
+    def maxSize(max: Int)(using FW: FailWithMaxSize[E, P]): Rule[F, V, E] =
+      Rule.ensure(field.failMaxSize(max))(II(field.value).size <= max)
 
     /** Applies `check` to each collection element, each should succeed */
-    def each(check: Field[II.A] => F[VR[E]]): F[VR[E]] = eachWithIndex((f, _) => check(f))
+    def each(check: Field[II.A] => Rule[F, V, E]): Rule[F, V, E] = eachWithIndex((f, _) => check(f))
 
     /** Applies `check` to each collection element, each should succeed */
     @nowarn
-    def eachWithIndex(check: (Field[II.A], Int) => F[VR[E]]): F[VR[E]] =
-      M.andAll(II(field.value).zipWithIndex.map { case (p: P, i) =>
+    def eachWithIndex(check: (Field[II.A], Int) => Rule[F, V, E]): Rule[F, V, E] =
+      Rule.andAll(II(field.value).zipWithIndex.map { case (p: P, i) =>
         check(field.provideSub(i.toString, p), i)
       }.toList)
 
     /** Applies `check` to each collection element, any should succeed */
-    def any(check: Field[II.A] => F[VR[E]]): F[VR[E]] = anyWithIndex((f, _) => check(f))
+    def any(check: Field[II.A] => Rule[F, V, E]): Rule[F, V, E] = anyWithIndex((f, _) => check(f))
 
     /** Applies `check` to each collection element, any should succeed */
     @nowarn
-    def anyWithIndex(check: (Field[II.A], Int) => F[VR[E]]): F[VR[E]] =
-      M.orAll(II(field.value).zipWithIndex.map { case (p: P, i) =>
+    def anyWithIndex(check: (Field[II.A], Int) => Rule[F, V, E]): Rule[F, V, E] =
+      Rule.orAll(II(field.value).zipWithIndex.map { case (p: P, i) =>
         check(field.provideSub(i.toString, p), i)
       }.toList)
   }

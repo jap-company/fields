@@ -17,25 +17,23 @@
 package jap.fields
 package examples
 
-import jap.fields.ValidationResult._
+import cats._
 import jap.fields._
+import jap.fields.error._
+import jap.fields.fail._
+import jap.fields.typeclass.Effect.future._
+import jap.fields.typeclass.Validated
+import zio._
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-import zio._
-import cats._
-
-// import jap.fields.FailWith.FailWithFieldValidationType // fails string errors as ValidationType
-import jap.fields.FailWith.FailWithFieldValidationMessage // fails string errors as ValidationMessage
-import jap.fields.ValidationEffect.future._
-
 // Try changing Module delclaration to see how easy it is to swap Error type
 // object FutureValidationModule extends AccumulateVM[Future, ValidationError]
 // object FutureValidationModule extends AccumulateVM[Future, FieldError[String]]
-object FutureValidationModule extends AccumulateVM[Future, ValidationError.Message]
+object FutureValidationModule extends AccumulateVM[Future, ValidationMessage] with CanFailWithValidationMessage
 import FutureValidationModule._
 
 case class Email(value: String) extends AnyVal
@@ -63,6 +61,7 @@ object RegisterRequest {
       _.maxSize(10),
     )
     .subRule(_.age)(_ >= 18, _ <= 110)
+    .subRule(_.email)(_.map(_.value).matches(Email.EmailRegex))
     .subRule(_.password)(_.nonEmpty, _.minSize(4), _.maxSize(100))
     .subRule(_.password, _.passwordRepeat)(_ equalTo _)
     .build
@@ -91,7 +90,7 @@ object FieldsExample {
   final def main(args: Array[String]) = {
     def Divider                   = "---------------"
     def await[T](f: Future[T]): T = Await.result(f, Duration.Inf)
-    def printErrors[VR[_]: ValidationResult, E](title: String, res: Future[VR[E]], enabled: Boolean) =
+    def printErrors[V[_]: Validated, E](title: String, res: Future[V[E]], enabled: Boolean) =
       if (enabled) {
         println(Divider + title + Divider)
         println(Await.result(res, Duration.Inf).errors.mkString("\n"))
@@ -118,23 +117,23 @@ object FieldsExample {
     println("Fields Build Info: " + jap.fields.BuildInfo)
 
     val pureValidation =
-      List(
-        usernameF.minSize(1),
-        usernameF.maxSize(10),
-        usernameF.ensureF(userService.usernameIsAvailable, _.failMessage("Username is not available")),
-        ageF >= 18,
-        ageF <= 110,
-        passwordF.nonEmpty,
-        passwordF.minSize(4),
-        passwordF.maxSize(100),
-        passwordF === passwordRepeatF,
-        emailF.map(_.value).matches(Email.EmailRegex),
-        emailF.ensureF(userService.emailIsAvailable, _.failMessage("Email is not available")),
-      ).combineAll
+      for {
+        _ <- usernameF.minSize(1)
+        _ <- usernameF.maxSize(10)
+        _ <- usernameF.ensureF(userService.usernameIsAvailable, _.failMessage("Username is not available"))
+        _ <- ageF >= 18
+        _ <- MRule.whenF(Future.successful(true))(ageF <= 110)
+        _ <- passwordF.nonEmpty
+        _ <- passwordF.minSize(4)
+        _ <- passwordF.maxSize(100)
+        _ <- passwordF === passwordRepeatF
+        _ <- emailF.map(_.value).matches(Email.EmailRegex)
+        _ <- emailF.ensureF(userService.emailIsAvailable, _.failMessage("Email is not available"))
+      } yield V.valid
 
-    println(await(requestF.validate).errors)
-    printErrors("Policy", requestF.validate, enabled = true)
-    printErrors("Pure", pureValidation, enabled = true)
+    println(await(requestF.validate.errors))
+    printErrors("Policy", requestF.validate.unwrap, enabled = true)
+    printErrors("Pure", pureValidation.unwrap, enabled = true)
     println(Divider)
   }
 }

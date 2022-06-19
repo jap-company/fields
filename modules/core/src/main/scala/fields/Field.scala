@@ -69,6 +69,11 @@ object Field {
 
   /** Create [[jap.fields.Field]] with given `value` and [[FieldPath.Root]] `path` */
   def apply[P](value: P): Field[P] = new Field(FieldPath.Root, value)
+
+  implicit final def toErrorFieldOps[P, E](field: Field[P]): syntax.ErrorFieldOps[P, E]        =
+    new syntax.ErrorFieldOps(field)
+  implicit final def toFailFieldOps[P, V[_], E](field: Field[P]): syntax.FailFieldOps[P, V, E] =
+    new syntax.FailFieldOps(field)
 }
 
 object FieldConversions {

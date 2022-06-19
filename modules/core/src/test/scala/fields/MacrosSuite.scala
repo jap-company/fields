@@ -1,6 +1,5 @@
 package jap.fields
 
-import ValidationError._
 import DefaultAccumulateVM._
 
 class MacrosSuite extends munit.FunSuite {

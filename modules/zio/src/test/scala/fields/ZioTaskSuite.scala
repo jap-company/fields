@@ -1,16 +1,18 @@
 package jap.fields
 
-import FieldPathConversions._
-import ValidationError._
-import ValidationResult._
-import ZIOInterop._
+import jap.fields.fail._
+import zio._
+import zio.test.Assertion._
+import zio.test._
+
 import scala.collection.mutable.ListBuffer
 
-import zio._
-import zio.test._
-import zio.test.Assertion._
+import FieldPathConversions._
+import error._
+import error.ValidationError._
+import ZioInterop._
 
-object TaskValidationModule extends FailFastVM[Task, ValidationError]
+object TaskValidationModule extends FailFastVM[Task, ValidationError] with CanFailWithValidationError
 import TaskValidationModule._
 
 object ZioTaskSuite extends DefaultRunnableSpec {
@@ -25,36 +27,38 @@ object ZioTaskSuite extends DefaultRunnableSpec {
         implicit val inited: ListBuffer[FieldPath] = new ListBuffer[FieldPath]
 
         val field = Field(FieldPath.Root, 12)
-        val vr    = field.ensure(init(field)(_) > 10, _.failMinSize(10))
+        val rule  = field.ensure(init(field)(_) > 10, _.failMinSize(10))
 
         val beforeRun = inited.toList.length
 
-        vr.map { result =>
+        rule.effect.map { result =>
           assert(beforeRun)(equalTo(0)) &&
-          assert(result)(equalTo(FailFast.valid)) &&
+          assert(result)(equalTo(V.valid)) &&
           assert(inited.toList)(hasSize(equalTo(1)))
         }
       },
       testM("FailFast.sequence") {
         implicit val inited: ListBuffer[FieldPath] = new ListBuffer[FieldPath]
 
-        val vrMemo = (0 to 100)
-          .map { i =>
-            val field = Field(i.toString, 10)
-            field.ensure(init(field)(_) > i, _.failMinSize(10))
-          }
-          .combineAll
-          .memoize
+        val resultMemo =
+          (0 to 100)
+            .map { i =>
+              val field = Field(i.toString, 10)
+              field.ensure(init(field)(_) > i, _.failMinSize(10))
+            }
+            .combineAll
+            .effect
+            .memoize
 
         val expectedToInit = (0 to 10).map(v => FieldPath(v.toString)).toList
 
         val beforeRun = inited.toList.length
 
         for {
-          vr            <- vrMemo
-          result1       <- vr
+          result        <- resultMemo
+          result1       <- result
           afterFirstRun <- UIO(inited.toList)
-          result2       <- vr
+          result2       <- result
         } yield (
           assert(beforeRun)(equalTo(0)) &&
             assert(result1.errors)(equalTo(MinSize("10", 10) :: Nil)) &&

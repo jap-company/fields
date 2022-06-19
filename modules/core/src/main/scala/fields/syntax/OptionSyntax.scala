@@ -17,32 +17,45 @@
 package jap.fields
 package syntax
 
-trait OptionSyntax[F[_], VR[_], E] { M: ValidationModule[F, VR, E] =>
-  implicit final def toOptionFieldOps[P](field: Field[Option[P]]): OptionFieldOps[P, F, VR, E] =
+import typeclass._
+import fail._
+
+trait ModuleOptionSyntax[F[_], V[_], E] { M: ValidationModule[F, V, E] =>
+  implicit final def toOptionFieldOps[P](field: Field[Option[P]]): OptionFieldOps[P, F, V, E] =
     new OptionFieldOps(field)
 
   /** Unpacks `rule` from `Option` if `None` returns valid */
-  def someOrValid(rule: => Option[F[VR[E]]]): F[VR[E]] =
-    F.defer(rule.getOrElse(M.validF))
+  def someOrValid(rule: => Option[Rule[F, V, E]]): Rule[F, V, E] = OptionSyntax.someOrValid(rule)
 }
 
-final class OptionFieldOps[P, F[_], VR[_], E](private val field: Field[Option[P]]) extends AnyVal {
+object OptionSyntax extends OptionSyntax
+trait OptionSyntax {
+  implicit final def toOptionFieldOps[F[_], V[_], E, P](field: Field[Option[P]]): OptionFieldOps[P, F, V, E] =
+    new OptionFieldOps(field)
+
+  /** Unpacks `rule` from `Option` if `None` returns valid */
+  def someOrValid[F[_]: Effect, V[_]: Validated, E](rule: => Option[Rule[F, V, E]]): Rule[F, V, E] =
+    Rule.defer(rule.getOrElse(Rule.valid))
+}
+
+final class OptionFieldOps[P, F[_], V[_], E](private val field: Field[Option[P]]) extends AnyVal {
 
   /** Alias for [[isDefined]] */
-  def isSome(implicit M: ValidationModule[F, VR, E], FW: FailWithEmpty[E]): F[VR[E]] = isDefined
+  def isSome(implicit F: Effect[F], V: Validated[V], FW: FailWithEmpty[E, Option[P]]): Rule[F, V, E] =
+    isDefined
 
   /** Validates that [[jap.fields.Field]]#value is [[scala.Some]] */
-  def isDefined(implicit M: ValidationModule[F, VR, E], FW: FailWithEmpty[E]): F[VR[E]] =
-    M.fieldAssert[Option[P]](field, _.isDefined, FW.empty)
+  def isDefined(implicit F: Effect[F], V: Validated[V], FW: FailWithEmpty[E, Option[P]]): Rule[F, V, E] =
+    Rule.ensure(field.failEmpty(FW, V))(field.value.isDefined)
 
   /** Alias for [[isEmpty]] */
-  def isNone(implicit M: ValidationModule[F, VR, E], FW: FailWithNonEmpty[E]): F[VR[E]] = isEmpty
+  def isNone(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, Option[P]]): Rule[F, V, E] = isEmpty
 
   /** Validates that [[jap.fields.Field]]#value is [[scala.None]] */
-  def isEmpty(implicit M: ValidationModule[F, VR, E], FW: FailWithNonEmpty[E]): F[VR[E]] =
-    M.fieldAssert[Option[P]](field, _.isEmpty, FW.nonEmpty)
+  def isEmpty(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, Option[P]]): Rule[F, V, E] =
+    Rule.ensure(field.failNonEmpty(FW, V))(field.value.isEmpty)
 
   /** Appies `check` to [[jap.fields.Field]]#value if it is [[scala.Some]] or returns valid */
-  def some(check: Field[P] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
-    M.F.defer(field.option.fold(M.validF)(check))
+  def some(check: Field[P] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+    Rule.defer(field.option.fold[Rule[F, V, E]](Rule.valid)(check))
 }

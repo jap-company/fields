@@ -15,6 +15,7 @@
  */
 
 package jap.fields
+package typeclass
 
 import scala.annotation.implicitNotFound
 

@@ -8,8 +8,8 @@ Here is complete list of predefined validation syntax.
 import jap.fields._
 import jap.fields.DefaultAccumulateVM._
 import jap.fields.FieldPathConversions._
+
 val field: Field[Int] = Field("1", 1)
-ensure(false, field.failInvalid)
 field.ensure(_ == 3, _.failInvalid)
 field.assert(_ == 3, _.invalidError)
 field.check(f => if(false) f.failMessage("A") else f.failMessage("B"))
@@ -109,16 +109,18 @@ mapF.anyValue(_ > 4)
 
 ```scala mdoc:reset:width=100
 import jap.fields._
-import jap.fields.ZIOInterop._
+import jap.fields.ZioInterop._
+import jap.fields.fail._
+import jap.fields.error._
 import zio._
-object TaskVM extends AccumulateVM[Task, ValidationError]
-import TaskVM._
+
+object Validation extends AccumulateVM[Task, ValidationError] with CanFailWithValidationError
+import Validation._
 
 def unsafeRun[A](task: Task[A]) = Runtime.global.unsafeRun(task)
 def isPositiveApi(number: Int): zio.Task[Boolean] = zio.UIO(number > 0)
 
 val field = Field(FieldPath("size"), -1)
-unsafeRun(field.ensureF(isPositiveApi, _.failMessage("API: NOT POSITIVE")))
-unsafeRun(field.assertF(isPositiveApi, _.messageError("API: NOT POSITIVE")))
-unsafeRun(ensureF(isPositiveApi(field.value), field.failMessage("API: NOT POSITIVE")))
+unsafeRun(field.ensureF(isPositiveApi, _.failMessage("API: NOT POSITIVE")).effect)
+unsafeRun(field.assertF(isPositiveApi, _.messageError("API: NOT POSITIVE")).effect)
 ```

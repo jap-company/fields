@@ -17,18 +17,27 @@
 package jap.fields
 package syntax
 
-trait BooleanSyntax[F[_], VR[_], E] { M: ValidationModule[F, VR, E] =>
-  implicit final def toBooleanFieldOps(field: Field[Boolean]): BooleanFieldOps[F, VR, E] =
+import typeclass._
+import fail._
+
+object BooleanSyntax extends BooleanSyntax
+trait BooleanSyntax {
+  implicit final def toBooleanFieldOps[F[_], V[_], E](field: Field[Boolean]): BooleanFieldOps[F, V, E] =
     new BooleanFieldOps(field)
 }
 
-final class BooleanFieldOps[F[_], VR[_], E](private val field: Field[Boolean]) extends AnyVal {
+trait ModuleBooleanSyntax[F[_], V[_], E] { self: ValidationModule[F, V, E] =>
+  implicit final def toBooleanFieldOps(field: Field[Boolean]): BooleanFieldOps[F, V, E] =
+    new BooleanFieldOps(field)
+}
+
+final class BooleanFieldOps[F[_], V[_], E](private val field: Field[Boolean]) extends AnyVal {
 
   /** Validates [[jap.fields.Field]]#value is `true` */
-  def isTrue(implicit M: ValidationModule[F, VR, E], FW: FailWithCompare[E]): F[VR[E]] =
-    M.fieldAssert[Boolean](field, _ == true, FW.equal(true))
+  def isTrue(implicit F: Effect[F], V: Validated[V], FW: FailWithCompare[E, Boolean]): Rule[F, V, E] =
+    Rule.ensure(field.failEqual(true))(field.value == true)
 
   /** Validates [[jap.fields.Field]]#value is `false` */
-  def isFalse(implicit M: ValidationModule[F, VR, E], FW: FailWithCompare[E]): F[VR[E]] =
-    M.fieldAssert[Boolean](field, _ == false, FW.equal(false))
+  def isFalse(implicit F: Effect[F], V: Validated[V], FW: FailWithCompare[E, Boolean]): Rule[F, V, E] =
+    Rule.ensure(field.failEqual(false))(field.value == false)
 }

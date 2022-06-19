@@ -20,70 +20,71 @@ package syntax
 import scala.util.Try
 import scala.util.matching.Regex
 
-trait StringSyntax[F[_], VR[_], E] { M: ValidationModule[F, VR, E] =>
-  implicit final def toStringFieldOps(field: Field[String]): StringFieldOps[F, VR, E] = new StringFieldOps(field)
+import typeclass._
+import fail._
+
+trait ModuleStringSyntax[F[_], V[_], E] { M: ValidationModule[F, V, E] =>
+  implicit final def toStringFieldOps(field: Field[String]): StringFieldOps[F, V, E] = new StringFieldOps(field)
 }
 
-final class StringFieldOps[F[_], VR[_], E](private val field: Field[String]) extends AnyVal {
+object StringSyntax extends StringSyntax
+trait StringSyntax {
+  implicit final def toStringFieldOps[F[_], V[_], E](field: Field[String]): StringFieldOps[F, V, E] =
+    new StringFieldOps(field)
+}
+
+final class StringFieldOps[F[_], V[_], E](private val field: Field[String]) extends AnyVal {
 
   /** Validates that [[jap.fields.Field]]#value starts with `value` */
-  def startsWith(value: String)(implicit M: ValidationModule[F, VR, E], FW: FailWithMessage[E]) =
-    M.fieldAssert[String](
-      field,
-      _.startsWith(value),
-      FW.message("starts-with", Some(s"should start with $value")),
-    )
+  def startsWith(value: String)(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
+    Rule.ensure(field.failMessage("starts-with", s"should start with $value"))(field.value.startsWith(value))
 
   /** Validates that [[jap.fields.Field]]#value ends with `value` */
-  def endsWith(value: String)(implicit M: ValidationModule[F, VR, E], FW: FailWithMessage[E]) =
-    M.fieldAssert[String](
-      field,
-      _.endsWith(value),
-      FW.message("ends-with", Some(s"should end with $value")),
-    )
+  def endsWith(value: String)(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
+    Rule.ensure(field.failMessage("ends-with", s"should end with $value"))(field.value.endsWith(value))
 
   /** Validates that [[jap.fields.Field]]#value is not empty */
-  def nonEmpty(implicit M: ValidationModule[F, VR, E], FW: FailWithEmpty[E]) =
-    M.fieldAssert[String](field, _.nonEmpty, FW.empty)
+  def nonEmpty(implicit F: Effect[F], V: Validated[V], FW: FailWithEmpty[E, String]): Rule[F, V, E] =
+    Rule.ensure(field.failEmpty)(field.value.nonEmpty)
 
   /** Validates that [[jap.fields.Field]]#value is not blank */
-  def nonBlank(implicit M: ValidationModule[F, VR, E], FW: FailWithEmpty[E]) =
-    M.fieldAssert[String](field, _.nonEmpty, FW.empty)
+  def nonBlank(implicit F: Effect[F], V: Validated[V], FW: FailWithEmpty[E, String]): Rule[F, V, E] =
+    Rule.ensure(field.failEmpty)(field.value.nonEmpty)
 
   /** Validates that [[jap.fields.Field]]#value minimum size is `min` */
-  def minSize(min: Int)(implicit M: ValidationModule[F, VR, E], FW: FailWithMinSize[E]) =
-    M.fieldAssert[String](field, _.size >= min, FW.minSize(min))
+  def minSize(min: Int)(implicit F: Effect[F], V: Validated[V], FW: FailWithMinSize[E, String]): Rule[F, V, E] =
+    Rule.ensure(field.failMinSize(min))(field.value.size >= min)
 
   /** Validates that [[jap.fields.Field]]#value maximum size is `max` */
-  def maxSize(max: Int)(implicit M: ValidationModule[F, VR, E], FW: FailWithMaxSize[E]) =
-    M.fieldAssert[String](field, _.size <= max, FW.maxSize(max))
+  def maxSize(max: Int)(implicit F: Effect[F], V: Validated[V], FW: FailWithMaxSize[E, String]): Rule[F, V, E] =
+    Rule.ensure(field.failMaxSize(max))(field.value.size <= max)
 
   /** Validates that [[jap.fields.Field]]#value is blank */
-  def blank(implicit M: ValidationModule[F, VR, E], FW: FailWithNonEmpty[E]) =
-    M.fieldAssert[String](field, _.isEmpty, FW.nonEmpty)
+  def blank(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, String]): Rule[F, V, E] =
+    Rule.ensure(field.failNonEmpty)(field.value.isEmpty)
 
   /** Validates that [[jap.fields.Field]]#value matches Regexp */
-  def matches(r: String)(implicit M: ValidationModule[F, VR, E], FW: FailWithMessage[E]): F[VR[E]] =
-    M.fieldAssert[String](
-      field,
-      _.matches(r),
-      FW.message("match", Some(s"${field.fullPath} should match $r")),
-    )
+  def matches(r: String)(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
+    Rule.ensure(field.failMessage("match", s"${field.fullPath} should match $r")) {
+      field.value.matches(r)
+    }
 
   /** Validates that [[jap.fields.Field]]#value is matches [[scala.util.matching.Regex]] */
-  def matches(r: Regex)(implicit M: ValidationModule[F, VR, E], FW: FailWithMessage[E]): F[VR[E]] =
+  def matches(r: Regex)(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
     matches(r.regex)
 
   /** Validates that [[jap.fields.Field]]#value is part of [[scala.Enumeration]] */
-  def isEnum(e: Enumeration)(implicit M: ValidationModule[F, VR, E], FW: FailWithOneOf[E]) =
-    M.fieldAssert[String](
-      field,
-      v => Try(e.withName(v)).toOption.isDefined,
-      FW.oneOf(e.values.map(_.toString).toList),
-    )
+  def isEnum(e: Enumeration)(implicit F: Effect[F], V: Validated[V], FW: FailWithOneOf[E, String]): Rule[F, V, E] =
+    Rule.ensure(field.failOneOf(e.values.map(_.toString).toList)) {
+      Try(e.withName(field.value)).toOption.isDefined
+    }
 
   /** Validates that [[jap.fields.Field]]#value is part of Java Enum */
-  def isJEnum[T <: Enum[T]](values: Array[T])(implicit M: ValidationModule[F, VR, E], FW: FailWithOneOf[E]) =
-    M.fieldAssert[String](field, values.map(_.name()).contains(_), FW.oneOf(values.toSeq.map(_.toString)))
+  def isJEnum[T <: Enum[T]](
+      values: Array[T]
+  )(implicit F: Effect[F], V: Validated[V], FW: FailWithOneOf[E, String]): Rule[F, V, E] =
+    Rule.ensure(field.failOneOf(values.toSeq.map(_.toString))) {
+      values.map(_.name()).contains(field.value)
+    }
 
 }

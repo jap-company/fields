@@ -17,151 +17,126 @@
 package jap.fields
 package syntax
 
-trait GenericSyntax[F[_], VR[_], E] { M: ValidationModule[F, VR, E] =>
-  implicit final def toFieldOps[P](field: Field[P]): FieldOps[P, F, VR, E] =
+import typeclass._
+import fail._
+
+trait ModuleGenericSyntax[F[_], V[_], E] { M: ValidationModule[F, V, E] =>
+  implicit final def toFieldOps[P](field: Field[P]): FieldOps[P, F, V, E] =
     new FieldOps(field)
-
-  /** Valid `VR[E]` instance */
-  val valid: VR[E] = VR.valid[E]
-
-  /** Returns invalid `VR[E]` containing provided error */
-  def invalid(error: E): VR[E] = VR.invalid(error)
-
-  /** Returns `F[_]` containing invalid `VR[E]` containing provided error */
-  def invalidF(error: E): Rule = F.suspend(VR.invalid(error))
-
-  /** Valid Rule instance */
-  val validF: Rule = F.pure(valid)
-
-  /** Returns [[ValidationResult.valid]] if `cond` is true else fails with provided `error` */
-  @inline
-  def when[P](cond: => Boolean, error: => F[VR[E]]): Rule =
-    F.defer(if (cond) validF else error)
-
-  @inline
-  def whenF[P](cond: => F[Boolean], error: => F[VR[E]]): Rule =
-    F.flatMap(F.defer(cond))(if (_) validF else error)
-
-  /** Returns [[ValidationResult.valid]] if `cond` is true else fails with provided `error` */
-  @inline
-  def ensure[P](cond: => Boolean, error: => VR[E]): Rule =
-    F.suspend(if (cond) valid else error)
-
-  @inline
-  def ensureF[P](cond: => F[Boolean], error: => VR[E]): Rule =
-    F.map(F.defer(cond))(if (_) valid else error)
-
-  /** Returns [[ValidationResult.valid]] if `cond` is true else fails with provided `error` */
-  @inline
-  def fieldEnsure[P](field: Field[P], cond: P => Boolean, vr: Field[P] => VR[E]): F[VR[E]] =
-    ensure(cond(field.value), vr(field))
-
-  /** Returns [[ValidationResult.valid]] if `cond` is true else fails with provided `error` */
-  @inline
-  def fieldEnsureF[P](field: Field[P], cond: P => F[Boolean], vr: Field[P] => VR[E]): F[VR[E]] =
-    ensureF(cond(field.value), vr(field))
-
-  /** Like [[ValidationModule.ensure]] but single error */
-  @inline
-  def fieldAssert[P](field: Field[P], cond: P => Boolean, error: Field[P] => E): F[VR[E]] =
-    fieldEnsure(field, cond, error.andThen(invalid))
-
-  /** Like [[ValidationModule.ensureF]] but single error */
-  @inline
-  def fieldAssertF[P](field: Field[P], cond: P => F[Boolean], error: Field[P] => E): F[VR[E]] =
-    fieldEnsureF(field, cond, error.andThen(invalid))
 }
 
-final class FieldOps[P, F[_], VR[_], E](private val field: Field[P]) extends AnyVal {
+object GenericSyntax extends GenericSyntax
+trait GenericSyntax {
+  implicit final def toFieldOps[F[_], V[_], E, P](field: Field[P]): FieldOps[P, F, V, E] =
+    new FieldOps(field)
+}
 
-  /** See [[ValidationModule.fieldEnsure]] */
-  def when(cond: P => Boolean, error: Field[P] => F[VR[E]])(implicit
-      M: ValidationModule[F, VR, E]
-  ): F[VR[E]] = M.when(cond(field.value), error(field))
+final class FieldOps[P, F[_], V[_], E](private val field: Field[P]) extends AnyVal {
 
-  /** See [[ValidationModule.fieldEnsureF]] */
-  def whenF(cond: P => F[Boolean], error: Field[P] => F[VR[E]])(implicit
-      M: ValidationModule[F, VR, E]
-  ): F[VR[E]] = M.whenF(cond(field.value), error(field))
+  /** Runs validation only if true */
+  def when(test: => Boolean)(f: Field[P] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+    Rule.when(test)(f(field))
 
-  /** See [[ValidationModule.fieldEnsure]] */
-  def ensure(cond: P => Boolean, error: Field[P] => VR[E])(implicit
-      M: ValidationModule[F, VR, E]
-  ): F[VR[E]] = M.fieldEnsure(field, cond, error)
+  /** Runs validation only if false */
+  def unless(test: => Boolean)(f: Field[P] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+    Rule.when(!test)(f(field))
 
-  /** See [[ValidationModule.fieldEnsureF]] */
-  def ensureF(cond: P => F[Boolean], error: Field[P] => VR[E])(implicit
-      M: ValidationModule[F, VR, E]
-  ): F[VR[E]] = M.fieldEnsureF(field, cond, error)
+  /** See [[Rule.when]] */
+  def when(test: P => Boolean)(rule: Field[P] => Rule[F, V, E])(implicit
+      F: Effect[F],
+      V: Validated[V],
+  ): Rule[F, V, E] = Rule.when(test(field.value))(rule(field))
 
-  /** See [[ValidationModule.fieldAssert]] */
-  def assert(cond: P => Boolean, error: Field[P] => E)(implicit
-      M: ValidationModule[F, VR, E]
-  ): F[VR[E]] = M.fieldAssert(field, cond, error)
+  /** See [[Rule.whenF]] */
+  def whenF(test: P => F[Boolean])(rule: Field[P] => Rule[F, V, E])(implicit
+      F: Effect[F],
+      V: Validated[V],
+  ): Rule[F, V, E] = Rule.whenF(test(field.value))(rule(field))
 
-  /** See [[ValidationModule.fieldAssertF]] */
-  def assertF(cond: P => F[Boolean], error: Field[P] => E)(implicit
-      M: ValidationModule[F, VR, E]
-  ): F[VR[E]] = M.fieldAssertF(field, cond, error)
+  /** See [[Rule.ensure]] */
+  def ensure(test: P => Boolean, error: Field[P] => V[E])(implicit
+      F: Effect[F],
+      V: Validated[V],
+  ): Rule[F, V, E] = Rule.ensure(error(field))(test(field.value))
+
+  /** See [[Rule.ensureF]] */
+  def ensureF(test: P => F[Boolean], error: Field[P] => V[E])(implicit
+      F: Effect[F],
+      V: Validated[V],
+  ): Rule[F, V, E] = Rule.ensureF(error(field))(test(field.value))
+
+  /** Like [[Rule.ensure]] but for explicit error */
+  def assert(test: P => Boolean, error: Field[P] => E)(implicit
+      F: Effect[F],
+      V: Validated[V],
+  ): Rule[F, V, E] = ensure(test, error.andThen(V.invalid))
+
+  /** Like [[Rule.ensureF]] but for explicit error */
+  def assertF(test: P => F[Boolean], error: Field[P] => E)(implicit
+      F: Effect[F],
+      V: Validated[V],
+  ): Rule[F, V, E] = ensureF(test, error.andThen(V.invalid))
 
   /** Returns Suspended Outcome of applying `f` to `field` */
-  def check(f: Field[P] => VR[E])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
-    M.F.suspend(f(field))
+  def check(f: Field[P] => V[E])(implicit F: Effect[F]): Rule[F, V, E] =
+    Rule.pure(f(field))
 
   /** Returns Defered Outcome of applying `f` to `field` */
-  def checkF(f: Field[P] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
-    M.F.defer(f(field))
+  def checkF(f: Field[P] => Rule[F, V, E])(implicit F: Effect[F]): Rule[F, V, E] =
+    Rule.defer(f(field))
 
   /** Alias for [[equalTo]] */
-  def ===[C](
-      compared: C
-  )(implicit M: ValidationModule[F, VR, E], FW: FailWithCompare[E], C: FieldCompare[P, C]): F[VR[E]] =
+  def ===[C](compared: C)(implicit
+      F: Effect[F],
+      V: Validated[V],
+      FW: FailWithCompare[E, P],
+      C: FieldCompare[P, C],
+  ): Rule[F, V, E] =
     equalTo[C](compared)
 
   /** Validates that [[jap.fields.Field]]#value is equal to `compared` */
-  def equalTo[C](
-      compared: C
-  )(implicit M: ValidationModule[F, VR, E], FW: FailWithCompare[E], C: FieldCompare[P, C]): F[VR[E]] =
+  def equalTo[C](compared: C)(implicit
+      F: Effect[F],
+      V: Validated[V],
+      FW: FailWithCompare[E, P],
+      C: FieldCompare[P, C],
+  ): Rule[F, V, E] =
     assert(_ == C.value(compared), FW.equal[P, C](compared))
 
   /** Alias for [[notEqualTo]] */
-  def !==[C](
-      compared: C
-  )(implicit M: ValidationModule[F, VR, E], FW: FailWithCompare[E], C: FieldCompare[P, C]): F[VR[E]] =
+  def !==[C](compared: C)(implicit
+      F: Effect[F],
+      V: Validated[V],
+      FW: FailWithCompare[E, P],
+      C: FieldCompare[P, C],
+  ): Rule[F, V, E] =
     notEqualTo[C](compared)
 
   /** Validates that [[jap.fields.Field]]#value is not equal to `compared` */
   def notEqualTo[C](compared: C)(implicit
-      M: ValidationModule[F, VR, E],
-      FW: FailWithCompare[E],
+      F: Effect[F],
+      V: Validated[V],
+      FW: FailWithCompare[E, P],
       C: FieldCompare[P, C],
-  ): F[VR[E]] =
+  ): Rule[F, V, E] =
     assert(_ != C.value(compared), FW.notEqual[P, C](compared))
 
   /** Validates that [[jap.fields.Field]]#value is contained by `seq` */
-  def in(seq: Seq[P])(implicit M: ValidationModule[F, VR, E], FW: FailWithOneOf[E]): F[VR[E]] =
+  def in(seq: Seq[P])(implicit F: Effect[F], V: Validated[V], FW: FailWithOneOf[E, P]): Rule[F, V, E] =
     assert(seq.contains, FW.oneOf(seq))
 
   /** Combines all validations using AND */
-  def all(f: Field[P] => F[VR[E]]*)(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
-    M.andAll(f.map(_.apply(field)).toList)
+  def all(f: Field[P] => Rule[F, V, E]*)(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+    Rule.andAll(f.map(_.apply(field)).toList)
 
   /** Combines all validations using OR */
-  def any(f: Field[P] => F[VR[E]]*)(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
-    M.orAll(f.map(_.apply(field)).toList)
-
-  /** Runs validation only if true */
-  def when(cond: Boolean)(f: Field[P] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
-    M.F.defer(if (cond) f(field) else M.validF)
-
-  /** Runs validation only if false */
-  def unless(cond: Boolean)(f: Field[P] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
-    M.F.defer(if (cond) M.validF else f(field))
+  def any(f: Field[P] => Rule[F, V, E]*)(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+    Rule.orAll(f.map(_.apply(field)).toList)
 
   /** Validates [[jap.fields.Field]] using implicit [[ValidationPolicy]] */
-  def validate(implicit P: ValidationPolicy[P, F, VR, E]): F[VR[E]] = P.validate(field)
+  def validate(implicit P: ValidationPolicy[P, F, V, E]): Rule[F, V, E] = P.validate(field)
 
   /** Validates [[jap.fields.Field]] using implicit [[ValidationPolicy]] */
-  def validateEither(implicit M: ValidationModule[F, VR, E], P: ValidationPolicy[P, F, VR, E]): F[Either[VR[E], P]] =
-    M.F.map(P.validate(field))(vr => if (M.VR.isValid(vr)) Right(field.value) else Left(vr))
+  def validateEither(implicit F: Effect[F], V: Validated[V], P: ValidationPolicy[P, F, V, E]): F[Either[V[E], P]] =
+    P.validateEither(field)
 }

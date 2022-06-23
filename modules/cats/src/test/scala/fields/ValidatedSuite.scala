@@ -2,8 +2,7 @@ package jap.fields
 
 import cats.data._
 
-import ValidationError._
-import CatsInterop._
+import CatsInterop.{DefaultValidatedNecVM, DefaultValidatedNelVM}
 
 class ValidatedSuite extends munit.FunSuite {
   test("ValidatedNec") {
@@ -12,7 +11,7 @@ class ValidatedSuite extends munit.FunSuite {
     val field = Field(FieldPath.Root, 12)
     val vr    = field > 13 && field > 14 && (field > 15 || field === 12)
     assertEquals(
-      vr,
+      vr.effect,
       Validated.invalid(
         NonEmptyChain(
           field.greaterError(13),
@@ -27,7 +26,7 @@ class ValidatedSuite extends munit.FunSuite {
     val field = Field(FieldPath.Root, 12)
     val vr    = field > 13 && field > 14 && (field > 15 || field === 12)
     assertEquals(
-      vr,
+      vr.effect,
       Validated.invalid(
         NonEmptyList(
           field.greaterError(13),

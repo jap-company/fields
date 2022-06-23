@@ -160,6 +160,11 @@ const config = {
         darkTheme: darkCodeTheme,
         additionalLanguages: ['java', 'scala']
       },
+      algolia: {
+        appId: '0C7XECP0Q2',
+        apiKey: '49b43131bbbdf6f5fe3a5d78d76843f5',
+        indexName: 'fields',
+      },
     }),
 };
 

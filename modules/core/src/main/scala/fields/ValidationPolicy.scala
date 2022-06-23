@@ -16,42 +16,46 @@
 
 package jap.fields
 
+import typeclass._
+
 /** Typeclass that defines how to validate given field */
-trait ValidationPolicy[P, F[_], VR[_], E] { self =>
-  def validate(field: Field[P]): F[VR[E]]
+trait ValidationPolicy[P, F[_], V[_], E] { self =>
+  def validate(field: Field[P]): Rule[F, V, E]
+
+  /** Validates `field` using Policy and returns it as Either.Left if invalid and Either.Right if valid */
+  def validateEither(field: Field[P])(implicit F: Effect[F], V: Validated[V]): F[Either[V[E], P]] =
+    F.map(validate(field).effect)(vr => if (V.isValid(vr)) Right(field.value) else Left(vr))
 }
 
 object ValidationPolicy {
-  def builder[P, F[_], VR[_], E](implicit M: ValidationModule[F, VR, E]): ValidationPolicyBuilder[P, F, VR, E] =
+  def builder[P, F[_]: Effect, V[_]: Validated, E]: ValidationPolicyBuilder[P, F, V, E] =
     ValidationPolicyBuilder()
 }
 
 /** Builder class for [[jap.fields.ValidationPolicy]]. [[jap.fields.ValidationModule]] implicit should be in scope */
-case class ValidationPolicyBuilder[P, F[_], VR[_], E](rules: List[Field[P] => F[VR[E]]] = Nil)(implicit
-    val M: ValidationModule[F, VR, E]
-) {
+case class ValidationPolicyBuilder[P, F[_]: Effect, V[_]: Validated, E](rules: List[Field[P] => Rule[F, V, E]] = Nil) {
 
   /** Adds new rule to builder */
-  def rule(r: Field[P] => F[VR[E]]*): ValidationPolicyBuilder[P, F, VR, E] = copy(rules = rules ++ r)
+  def rule(rule: Field[P] => Rule[F, V, E]*): ValidationPolicyBuilder[P, F, V, E] = copy(rules = rules ++ rule)
 
   /** Adds new sub field rule to builder. First extracts sub field using `sub` function and then applies all `rules` to
     * it
     */
-  def fieldRule[S](sub: Field[P] => Field[S])(rules: Field[S] => F[VR[E]]*) =
+  def fieldRule[S](sub: Field[P] => Field[S])(rules: Field[S] => Rule[F, V, E]*) =
     rule { f =>
       val subField = sub(f)
-      M.combineAll(rules.map(_.apply(subField)).toList)
+      Rule.andAll(rules.map(_.apply(subField)).toList)
     }
 
   /** Same as `fieldRule` but for 2 sub fields */
   def fieldRule[S1, S2](
       sub1: Field[P] => Field[S1],
       sub2: Field[P] => Field[S2],
-  )(rules: (Field[S1], Field[S2]) => F[VR[E]]*) =
+  )(rules: (Field[S1], Field[S2]) => Rule[F, V, E]*) =
     rule { f =>
       val subField1 = sub1(f)
       val subField2 = sub2(f)
-      M.combineAll(rules.map(_.apply(subField1, subField2)).toList)
+      Rule.andAll(rules.map(_.apply(subField1, subField2)).toList)
     }
 
   /** Same as `fieldRule` but for 3 sub fields */
@@ -59,14 +63,14 @@ case class ValidationPolicyBuilder[P, F[_], VR[_], E](rules: List[Field[P] => F[
       sub1: Field[P] => Field[S1],
       sub2: Field[P] => Field[S2],
       sub3: Field[P] => Field[S3],
-  )(rules: (Field[S1], Field[S2], Field[S3]) => F[VR[E]]*) =
+  )(rules: (Field[S1], Field[S2], Field[S3]) => Rule[F, V, E]*) =
     rule { f =>
       val subField1 = sub1(f)
       val subField2 = sub2(f)
       val subField3 = sub3(f)
-      M.combineAll(rules.map(_.apply(subField1, subField2, subField3)).toList)
+      Rule.andAll(rules.map(_.apply(subField1, subField2, subField3)).toList)
     }
 
   /** Applies all validaiton rules to [[jap.fields.Field]]#value */
-  def build: ValidationPolicy[P, F, VR, E] = field => M.combineAll(rules.map(_.apply(field)))
+  def build: ValidationPolicy[P, F, V, E] = field => Rule.andAll(rules.map(_.apply(field)))
 }

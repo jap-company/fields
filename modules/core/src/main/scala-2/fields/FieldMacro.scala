@@ -63,14 +63,14 @@ class FieldMacro(val c: blackbox.Context) {
   }
 
   @nowarn
-  def policySubRuleMacro[P, S, F[_], VR[_], E](selector: c.Expr[P => S])(rules: c.Tree*): c.Tree = {
+  def policySubRuleMacro[P, S, F[_], V[_], E](selector: c.Expr[P => S])(rules: c.Tree*): c.Tree = {
     import c.universe._
     val q"$_.$_[..$_]($builder)" = c.prefix.tree
     q"$builder.fieldRule(_.sub($selector))(..$rules)"
   }
 
   @nowarn
-  def policySubRule2Macro[P, S1, S2, F[_], VR[_], E](selector1: c.Expr[P => S1], selector2: c.Expr[P => S2])(
+  def policySubRule2Macro[P, S1, S2, F[_], V[_], E](selector1: c.Expr[P => S1], selector2: c.Expr[P => S2])(
       rules: c.Tree*
   ): c.Tree = {
     import c.universe._
@@ -79,7 +79,7 @@ class FieldMacro(val c: blackbox.Context) {
   }
 
   @nowarn
-  def policySubRule3Macro[P, S1, S2, S3, F[_], VR[_], E](
+  def policySubRule3Macro[P, S1, S2, S3, F[_], V[_], E](
       selector1: c.Expr[P => S1],
       selector2: c.Expr[P => S2],
       selector3: c.Expr[P => S3],

@@ -17,34 +17,42 @@
 package jap.fields
 package syntax
 
-trait MapSyntax[F[_], VR[_], E] { M: ValidationModule[F, VR, E] =>
-  implicit final def toMapFieldOps[K, V](field: Field[Map[K, V]]): MapFieldOps[K, V, F, VR, E] =
+import typeclass._
+
+trait ModuleMapSyntax[F[_], V[_], E] { M: ValidationModule[F, V, E] =>
+  implicit final def toMapFieldOps[K, P](field: Field[Map[K, P]]): MapFieldOps[K, P, F, V, E] =
     new MapFieldOps(field)
 }
 
-final class MapFieldOps[K, V, F[_], VR[_], E](private val field: Field[Map[K, V]]) extends AnyVal {
+object MapSyntax extends MapSyntax
+trait MapSyntax {
+  implicit final def toMapFieldOps[F[_], V[_], E, K, P](field: Field[Map[K, P]]): MapFieldOps[K, P, F, V, E] =
+    new MapFieldOps(field)
+}
+
+final class MapFieldOps[K, P, F[_], V[_], E](private val field: Field[Map[K, P]]) extends AnyVal {
 
   /** Applies `check` to each Map element, each should succeed */
-  def each(f: Field[(K, V)] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
-    M.andAll(field.value.zipWithIndex.map { case (t, i) => f(field.provideSub(i.toString, t)) }.toList)
+  def each(f: Field[(K, P)] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+    Rule.andAll(field.value.zipWithIndex.map { case (t, i) => f(field.provideSub(i.toString, t)) }.toList)
 
   /** Applies `check` to each Map key, each should succeed */
-  def eachKey(check: Field[K] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
+  def eachKey(check: Field[K] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
     each(e => check(e.first))
 
   /** Applies `check` to each Map value, each should succeed */
-  def eachValue(check: Field[V] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
+  def eachValue(check: Field[P] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
     each(e => check(e.second))
 
   /** Applies `check` to each Map element, any should succeed */
-  def any(check: Field[(K, V)] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
-    M.orAll(field.value.zipWithIndex.map { case (t, i) => check(field.provideSub(i.toString, t)) }.toList)
+  def any(check: Field[(K, P)] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+    Rule.orAll(field.value.zipWithIndex.map { case (t, i) => check(field.provideSub(i.toString, t)) }.toList)
 
   /** Applies `check` to each Map key, any should succeed */
-  def anyKey(check: Field[K] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
+  def anyKey(check: Field[K] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
     any(e => check(e.first))
 
   /** Applies `check` to each Map value, any should succeed */
-  def anyValue(check: Field[V] => F[VR[E]])(implicit M: ValidationModule[F, VR, E]): F[VR[E]] =
+  def anyValue(check: Field[P] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
     any(e => check(e.second))
 }

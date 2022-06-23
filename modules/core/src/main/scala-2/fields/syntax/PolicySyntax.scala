@@ -17,27 +17,32 @@
 package jap.fields
 package syntax
 
-trait PolicySyntax[F[_], VR[_], E] { M: ValidationModule[F, VR, E] with FieldSyntax =>
-  implicit final class PolicyOps[P](policy: ValidationPolicyBuilder[P, F, VR, E]) {
-    /** Adds new subrule to builder. Uses `selector` to create [[jap.fields.Field]], `rules` are applied to that field */
+trait ModulePolicySyntax[F[_], V[_], E] { M: ValidationModule[F, V, E] with FieldSyntax =>
+  implicit final class PolicyOps[P](policy: ValidationPolicyBuilder[P, F, V, E]) {
+
+    /** Adds new subrule to builder. Uses `selector` to create [[jap.fields.Field]], `rules` are applied to that field
+      */
     def subRule[S](
         selector: P => S
-    )(rules: Field[S] => F[VR[E]]*): ValidationPolicyBuilder[P, F, VR, E] =
-      macro FieldMacro.policySubRuleMacro[P, S, F, VR, E]
+    )(
+        rules: Field[S] => Rule[F, V, E]*
+    ): ValidationPolicyBuilder[P, F, V, E] = macro FieldMacro.policySubRuleMacro[P, S, F, V, E]
 
     /** Adds new subrule to builder. Same as `subRule` but for 3 subrules */
     def subRule[S1, S2](
         selector1: P => S1,
         selector2: P => S2,
-    )(rules: (Field[S1], Field[S2]) => F[VR[E]]*): ValidationPolicyBuilder[P, F, VR, E] =
-      macro FieldMacro.policySubRule2Macro[P, S1, S2, F, VR, E]
+    )(
+        rules: (Field[S1], Field[S2]) => Rule[F, V, E]*
+    ): ValidationPolicyBuilder[P, F, V, E] = macro FieldMacro.policySubRule2Macro[P, S1, S2, F, V, E]
 
     /** Adds new subrule to builder. Same as `subRule` but for 3 subrules */
     def subRule[S1, S2, S3](
         selector1: P => S1,
         selector2: P => S2,
         selector3: P => S3,
-    )(rules: (Field[S1], Field[S2], Field[S3]) => F[VR[E]]*): ValidationPolicyBuilder[P, F, VR, E] =
-      macro FieldMacro.policySubRule3Macro[P, S1, S2, S3, F, VR, E]
+    )(
+        rules: (Field[S1], Field[S2], Field[S3]) => Rule[F, V, E]*
+    ): ValidationPolicyBuilder[P, F, V, E] = macro FieldMacro.policySubRule3Macro[P, S1, S2, S3, F, V, E]
   }
 }

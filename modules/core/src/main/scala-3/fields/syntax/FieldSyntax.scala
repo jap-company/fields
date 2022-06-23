@@ -17,6 +17,7 @@
 package jap.fields
 package syntax
 
+object FieldSyntax extends FieldSyntax
 trait FieldSyntax {
   extension [P](field: Field[P]) {
 

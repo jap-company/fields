@@ -14,7 +14,7 @@ import jap.fields._
 FieldPath.Root
 FieldPath("request", "name")
 FieldPath(List("request", "name"))
-FieldPath.raw("request.name")
+FieldPath.fromRaw("request.name")
 ```
 
 ### Operations

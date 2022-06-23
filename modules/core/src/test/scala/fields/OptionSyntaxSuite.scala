@@ -2,7 +2,7 @@ package jap.fields
 
 import FieldPathConversions._
 import DefaultAccumulateVM._
-import ValidationError._
+import error.ValidationError._
 
 class OptionSyntaxSuite extends munit.FunSuite {
   test("Option.some") {
@@ -18,9 +18,9 @@ class OptionSyntaxSuite extends munit.FunSuite {
     assertEquals(noneF.isNone.errors, Nil)
   }
   test("Option.someOrValid") {
-    val fo1        = Field(Option(3))
-    val fo2        = Field(Option(4))
-    val rule: Rule =
+    val fo1  = Field(Option(3))
+    val fo2  = Field(Option(4))
+    val rule =
       someOrValid(
         for {
           f1 <- fo1.option

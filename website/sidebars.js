@@ -17,21 +17,23 @@ const sidebars = {
   docs: [
     "overview",
     "validation-module",
+    "validation-syntax",
+    "validation-error",
+    "fail-with",
     {
       "Data Types": [
         "field",
         "fieldpath",
+        "rule",
       ]
     },
     {
       "Type Classes": [
-        "validation-result",
-        "validation-effect",
+        "validated",
+        "effect",
         "validation-policy",
-        "fail-with",
       ]
     },
-    "validation-syntax",
     "goals",
     "contributing",
   ]

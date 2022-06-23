@@ -1,10 +1,10 @@
 package jap.fields
 
-import ValidationError._
+import error.ValidationError._
 import FieldPathConversions._
 
-class ValidationResultSuite extends munit.FunSuite {
-  test("VR.traverse") {
+class ValidatedSuite extends munit.FunSuite {
+  test("V.traverse") {
     import DefaultAccumulateVM._
 
     val data  = TestData()
@@ -13,20 +13,20 @@ class ValidationResultSuite extends munit.FunSuite {
     val byteF = Field.sub(data.byte)
 
     assertEquals(
-      VR.traverse(List(intF, byteF, longF))(_.failEmpty).errors,
+      V.traverse(List(intF, byteF, longF))(_.failEmpty).errors,
       List(Empty(intF), Empty(byteF), Empty(longF)),
     )
 
     assertEquals(
-      VR.traverse(intF, byteF, longF)(_.failEmpty).errors,
+      V.traverse(intF, byteF, longF)(_.failEmpty).errors,
       List(Empty(intF), Empty(byteF), Empty(longF)),
     )
   }
   test("Ops") {
-    import jap.fields.ValidationResult._
-    import jap.fields.syntax.ValidationResultSyntax._
+    import jap.fields.syntax.ValidatedSyntax._
+    import jap.fields.data._
 
-    val vr1 = Accumulate.Valid
+    val vr1 = Accumulate.valid
     val vr2 = Accumulate.invalid("ERR01")
     val vr3 = Accumulate.invalid("ERR02")
 

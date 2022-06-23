@@ -16,6 +16,8 @@
 
 package jap.fields
 package syntax
+
+object FieldSyntax extends FieldSyntax
 trait FieldSyntax {
   implicit def toFieldSubOps[P](field: Field[P]): FieldSubOps[P] = new FieldSubOps(field)
   implicit def toFieldFromOps(field: Field.type): FieldFromOps   = new FieldFromOps(field)

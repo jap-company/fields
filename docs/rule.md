@@ -8,6 +8,10 @@ You can easily convert between Rule\[F, V, E\] and F\[V\[E\]\] back and forth fo
 
 ## Syntax
 
+### Module
+
+ValidationModule contains MRule alias that can help with type inference.
+
 ### Create
 
 ```scala mdoc

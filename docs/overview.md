@@ -2,7 +2,7 @@ import Traits from './traits.md'
 
 # Overview
 
-Fields is a zero-dependency Scala validation library.
+Fields is a zero-dependency validation library for Scala.
 
 <Traits />
 

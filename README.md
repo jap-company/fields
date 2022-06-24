@@ -10,7 +10,7 @@
 
 # Fields
 
-Fields is a zero-dependency Scala validation library.
+Fields is a zero-dependency validation library for Scala.
 
 - **Configurable**. Choose any Effect, Validated or Error types.
 - **Expressive**. Rich extendable validation syntax

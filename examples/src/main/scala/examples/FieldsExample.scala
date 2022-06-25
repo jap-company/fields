@@ -40,7 +40,7 @@ case class Email(value: String) extends AnyVal
 object Email {
   val EmailRegex                     =
     "^(?=.{1,64}@)[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*@[^-][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$".r
-  implicit val policy: Policy[Email] = _.map(_.value).matches(EmailRegex)
+  implicit val policy: Policy[Email] = _.map(_.value).matchesRegex(EmailRegex)
 }
 
 case class Username(value: String) extends AnyVal
@@ -61,7 +61,7 @@ object RegisterRequest {
       _.maxSize(10),
     )
     .subRule(_.age)(_ >= 18, _ <= 110)
-    .subRule(_.email)(_.map(_.value).matches(Email.EmailRegex))
+    .subRule(_.email)(_.map(_.value).matchesRegex(Email.EmailRegex))
     .subRule(_.password)(_.nonEmpty, _.minSize(4), _.maxSize(100))
     .subRule(_.password, _.passwordRepeat)(_ equalTo _)
     .build
@@ -127,7 +127,7 @@ object FieldsExample {
         _ <- passwordF.minSize(4)
         _ <- passwordF.maxSize(100)
         _ <- passwordF === passwordRepeatF
-        _ <- emailF.map(_.value).matches(Email.EmailRegex)
+        _ <- emailF.map(_.value).matchesRegex(Email.EmailRegex)
         _ <- emailF.ensureF(userService.emailIsAvailable, _.failMessage("Email is not available"))
       } yield V.valid
 

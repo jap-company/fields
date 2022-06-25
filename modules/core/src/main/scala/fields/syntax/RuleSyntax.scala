@@ -74,11 +74,11 @@ final class RuleValidationOps[F[_], V[_], E](private val rule: Rule[F, V, E]) ex
     Rule.modify(rule)(vr => if (V.isInvalid(vr)) f(vr) else vr)
 
   /** Same as [[jap.fields.typeclass.Validated.asError]] but effectful */
-  def asError(error: E)(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+  def asError(error: => E)(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
     Rule.modify(rule)(V.asError(_)(error))
 
   /** Same as [[jap.fields.typeclass.Validated.asError]] but effectful */
-  def asInvalid(invalid: V[E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+  def asInvalid(invalid: => V[E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
     Rule.modify(rule)(V.asInvalid(_)(invalid))
 
   /** Same as [[jap.fields.typeclass.Validated.when]] but effectful */

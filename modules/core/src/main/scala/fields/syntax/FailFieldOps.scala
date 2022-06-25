@@ -23,6 +23,9 @@ import error.FieldError
 
 final class FailFieldOps[P, V[_], E](private val field: Field[P]) extends AnyVal {
 
+  /** Use field path to construct error */
+  def failPath(error: FieldPath => E)(implicit V: Validated[V]): V[E] = V.invalid(error(field.path))
+
   /** Just pathrought error */
   def fail(error: E)(implicit V: Validated[V]): V[E] = V.invalid(error)
 

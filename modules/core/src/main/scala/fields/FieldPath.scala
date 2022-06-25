@@ -18,7 +18,7 @@ package jap.fields
 
 /** [[jap.fields.FieldPath]] contains path parts of the Field.
   */
-case class FieldPath(private val parts: List[String]) extends AnyVal {
+final case class FieldPath(private val parts: List[String]) extends AnyVal {
 
   /** Is current path root.
     */

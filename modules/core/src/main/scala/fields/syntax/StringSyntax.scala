@@ -36,41 +36,45 @@ trait StringSyntax {
 final class StringFieldOps[F[_], V[_], E](private val field: Field[String]) extends AnyVal {
 
   /** Validates that [[jap.fields.Field]]#value starts with `value` */
-  def startsWith(value: String)(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
+  def startsWith(
+      value: => String
+  )(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
     Rule.ensure(field.failMessage("starts-with", s"should start with $value"))(field.value.startsWith(value))
 
   /** Validates that [[jap.fields.Field]]#value ends with `value` */
-  def endsWith(value: String)(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
+  def endsWith(
+      value: => String
+  )(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
     Rule.ensure(field.failMessage("ends-with", s"should end with $value"))(field.value.endsWith(value))
 
   /** Validates that [[jap.fields.Field]]#value is not empty */
-  def nonEmpty(implicit F: Effect[F], V: Validated[V], FW: FailWithEmpty[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failEmpty)(field.value.nonEmpty)
+  def nonEmpty(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, String]): Rule[F, V, E] =
+    Rule.ensure(field.failNonEmpty)(field.value.nonEmpty)
 
   /** Validates that [[jap.fields.Field]]#value is not blank */
-  def nonBlank(implicit F: Effect[F], V: Validated[V], FW: FailWithEmpty[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failEmpty)(field.value.nonEmpty)
+  def nonBlank(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, String]): Rule[F, V, E] =
+    Rule.ensure(field.failNonEmpty)(field.value.nonEmpty)
+
+  /** Validates that [[jap.fields.Field]]#value is blank */
+  def blank(implicit F: Effect[F], V: Validated[V], FW: FailWithEmpty[E, String]): Rule[F, V, E] =
+    Rule.ensure(field.failEmpty)(field.value.isEmpty)
 
   /** Validates that [[jap.fields.Field]]#value minimum size is `min` */
-  def minSize(min: Int)(implicit F: Effect[F], V: Validated[V], FW: FailWithMinSize[E, String]): Rule[F, V, E] =
+  def minSize(min: => Int)(implicit F: Effect[F], V: Validated[V], FW: FailWithMinSize[E, String]): Rule[F, V, E] =
     Rule.ensure(field.failMinSize(min))(field.value.size >= min)
 
   /** Validates that [[jap.fields.Field]]#value maximum size is `max` */
-  def maxSize(max: Int)(implicit F: Effect[F], V: Validated[V], FW: FailWithMaxSize[E, String]): Rule[F, V, E] =
+  def maxSize(max: => Int)(implicit F: Effect[F], V: Validated[V], FW: FailWithMaxSize[E, String]): Rule[F, V, E] =
     Rule.ensure(field.failMaxSize(max))(field.value.size <= max)
 
-  /** Validates that [[jap.fields.Field]]#value is blank */
-  def blank(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failNonEmpty)(field.value.isEmpty)
-
   /** Validates that [[jap.fields.Field]]#value matches Regexp */
-  def matches(r: String)(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
+  def matches(r: => String)(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
     Rule.ensure(field.failMessage("match", s"${field.fullPath} should match $r")) {
       field.value.matches(r)
     }
 
   /** Validates that [[jap.fields.Field]]#value is matches [[scala.util.matching.Regex]] */
-  def matches(r: Regex)(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
+  def matchesRegex(r: => Regex)(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
     matches(r.regex)
 
   /** Validates that [[jap.fields.Field]]#value is part of [[scala.Enumeration]] */

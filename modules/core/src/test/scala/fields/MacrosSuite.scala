@@ -53,7 +53,7 @@ class MacrosSuite extends munit.FunSuite {
 
     assertEquals(
       policy.validate(dataF).errors,
-      stringF.emptyError :: Nil,
+      stringF.nonEmptyError :: Nil,
     )
   }
   test("Policy.subRule2") {

@@ -21,9 +21,11 @@ import scala.collection.generic.IsIterable
 import scala.concurrent.Future
 
 import typeclass.Validated._
+import FieldSyntax.sub
 
-trait ModulePolicySyntax[F[_], V[_], E] { M: ValidationModule[F, V, E] with FieldSyntax =>
-  extension [P](builder: ValidationPolicyBuilder[P, F, V, E]) {
+object PolicySyntax extends PolicySyntax
+trait PolicySyntax {
+  extension [P, F[_], V[_], E](builder: ValidationPolicyBuilder[P, F, V, E]) {
 
     /** Adds new subrule to builder. Uses `selector` to create [[jap.fields.Field]], `rules` are applied to that field
       */
@@ -49,5 +51,4 @@ trait ModulePolicySyntax[F[_], V[_], E] { M: ValidationModule[F, V, E] with Fiel
         rules.map(r => r(_: Field[S1], _: Field[S2], _: Field[S3])): _*
       )
   }
-
 }

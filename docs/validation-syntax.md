@@ -76,7 +76,7 @@ Field("").nonBlank
 stringF.minSize(5)
 stringF.maxSize(1)
 stringF.blank
-stringF.matches("scala".r)
+stringF.matchesRegex("scala".r)
 stringF.matches("scala")
 ```
 

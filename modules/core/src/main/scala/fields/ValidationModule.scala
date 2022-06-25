@@ -61,7 +61,7 @@ abstract class ValidationModule[F[_], V[_], E](implicit
     with ModuleStringSyntax[F, V, E]
     with ModuleMapSyntax[F, V, E]
     with ModuleIterableSyntax[F, V, E]
-    with ModulePolicySyntax[F, V, E]
+    with PolicySyntax
     with FieldSyntax
     with ValidatedSyntax {
 

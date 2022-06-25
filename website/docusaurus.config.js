@@ -155,6 +155,15 @@ const config = {
         ],
         copyright: `Copyright © ${new Date().getFullYear()} Fields, Jap Company. Built with Docusaurus.`,
       },
+      announcementBar: {
+        id: 'support_ukraine',
+        content:
+          'Support Ukraine 🇺🇦 <a target="_blank" rel="noopener noreferrer" \
+            href="http://u24.gov.ua/"> Help Provide Aid to Ukraine</a>.',
+        backgroundColor: '#20232a',
+        textColor: '#fff',
+        isCloseable: false,
+      },
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,

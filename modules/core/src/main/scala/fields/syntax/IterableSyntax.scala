@@ -27,22 +27,29 @@ trait ModuleIterableSyntax[F[_], V[_], E] { self: ValidationModule[F, V, E] =>
     new IterableFieldOps(field)
 }
 
+object IterableSyntax extends IterableSyntax
+trait IterableSyntax {
+  implicit final def toIterableFieldOps[F[_], V[_], E, I[_] <: Iterable[?], P](
+      field: Field[I[P]]
+  ): IterableFieldOps[I, P, F, V, E] = new IterableFieldOps(field)
+}
+
 final class IterableFieldOps[I[_] <: Iterable[?], P, F[_], V[_], E](private val field: Field[I[P]]) extends AnyVal {
 
   /** Checks that collection is empty */
-  def isEmpty(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, I[P]]): Rule[F, V, E] =
-    Rule.ensure(field.failNonEmpty)(field.value.isEmpty)
-
-  /** Checks that collection is not empty */
-  def nonEmpty(implicit F: Effect[F], V: Validated[V], FW: FailWithEmpty[E, I[P]]): Rule[F, V, E] =
+  def isEmpty(implicit F: Effect[F], V: Validated[V], FW: FailWithEmpty[E, I[P]]): Rule[F, V, E] =
     Rule.ensure(field.failEmpty)(field.value.isEmpty)
 
+  /** Checks that collection is not empty */
+  def nonEmpty(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, I[P]]): Rule[F, V, E] =
+    Rule.ensure(field.failNonEmpty)(field.value.isEmpty)
+
   /** Checks that collection minimum size is `min` */
-  def minSize(min: Int)(implicit F: Effect[F], V: Validated[V], FW: FailWithMinSize[E, I[P]]): Rule[F, V, E] =
+  def minSize(min: => Int)(implicit F: Effect[F], V: Validated[V], FW: FailWithMinSize[E, I[P]]): Rule[F, V, E] =
     Rule.ensure(field.failMinSize(min))(field.value.size >= min)
 
   /** Checks that collection maximum size is `max` */
-  def maxSize(max: Int)(implicit F: Effect[F], V: Validated[V], FW: FailWithMaxSize[E, I[P]]): Rule[F, V, E] =
+  def maxSize(max: => Int)(implicit F: Effect[F], V: Validated[V], FW: FailWithMaxSize[E, I[P]]): Rule[F, V, E] =
     Rule.ensure(field.failMaxSize(max))(field.value.size <= max)
 
   /** Applies `check` to each collection element */

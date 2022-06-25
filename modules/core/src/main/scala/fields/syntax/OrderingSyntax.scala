@@ -32,7 +32,7 @@ trait OrderingSyntax                      {
 final class OrderingFieldOps[P, F[_], V[_], E](private val field: Field[P]) extends AnyVal {
 
   /** Validates that [[jap.fields.Field]]#value is greater or equal to `compared` */
-  def >=[C](compared: C)(implicit
+  def >=[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
       N: Ordering[P],
@@ -41,7 +41,7 @@ final class OrderingFieldOps[P, F[_], V[_], E](private val field: Field[P]) exte
   ): Rule[F, V, E] = gte[C](compared)
 
   /** Validates that [[jap.fields.Field]]#value is greater or equal to `compared` */
-  def gte[C](compared: C)(implicit
+  def gte[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
       N: Ordering[P],
@@ -53,7 +53,7 @@ final class OrderingFieldOps[P, F[_], V[_], E](private val field: Field[P]) exte
     }
 
   /** Validates that [[jap.fields.Field]]#value is greater than `compared` */
-  def >[C](compared: C)(implicit
+  def >[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
       N: Ordering[P],
@@ -62,7 +62,7 @@ final class OrderingFieldOps[P, F[_], V[_], E](private val field: Field[P]) exte
   ): Rule[F, V, E] = gt[C](compared)
 
   /** Validates that [[jap.fields.Field]]#value is greater than `compared` */
-  def gt[C](compared: C)(implicit
+  def gt[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
       N: Ordering[P],
@@ -74,7 +74,7 @@ final class OrderingFieldOps[P, F[_], V[_], E](private val field: Field[P]) exte
     }
 
   /** Validates that [[jap.fields.Field]]#value is less or equal to `compared` */
-  def <=[C](compared: C)(implicit
+  def <=[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
       N: Ordering[P],
@@ -83,7 +83,7 @@ final class OrderingFieldOps[P, F[_], V[_], E](private val field: Field[P]) exte
   ): Rule[F, V, E] = lte(compared)
 
   /** Validates that [[jap.fields.Field]]#value is less or equal to `compared` */
-  def lte[C](compared: C)(implicit
+  def lte[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
       N: Ordering[P],
@@ -95,7 +95,7 @@ final class OrderingFieldOps[P, F[_], V[_], E](private val field: Field[P]) exte
     }
 
   /** Validates that [[jap.fields.Field]]#value is less than `compared` */
-  def <[C](compared: C)(implicit
+  def <[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
       N: Ordering[P],
@@ -104,7 +104,7 @@ final class OrderingFieldOps[P, F[_], V[_], E](private val field: Field[P]) exte
   ): Rule[F, V, E] = lt[C](compared)
 
   /** Validates that [[jap.fields.Field]]#value is less than `compared` */
-  def lt[C](compared: C)(implicit
+  def lt[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
       N: Ordering[P],
@@ -116,7 +116,7 @@ final class OrderingFieldOps[P, F[_], V[_], E](private val field: Field[P]) exte
     }
 
   /** Validates that [[jap.fields.Field]]#value is  greaterEqual than `from` and lessEqual `to` */
-  def isBetween[FROM, TO](from: FROM, to: TO)(implicit
+  def isBetween[FROM, TO](from: => FROM, to: => TO)(implicit
       F: Effect[F],
       V: Validated[V],
       N: Ordering[P],

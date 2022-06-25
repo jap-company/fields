@@ -86,7 +86,7 @@ final class FieldOps[P, F[_], V[_], E](private val field: Field[P]) extends AnyV
     Rule.defer(f(field))
 
   /** Alias for [[equalTo]] */
-  def ===[C](compared: C)(implicit
+  def ===[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
       FW: FailWithCompare[E, P],
@@ -95,7 +95,7 @@ final class FieldOps[P, F[_], V[_], E](private val field: Field[P]) extends AnyV
     equalTo[C](compared)
 
   /** Validates that [[jap.fields.Field]]#value is equal to `compared` */
-  def equalTo[C](compared: C)(implicit
+  def equalTo[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
       FW: FailWithCompare[E, P],
@@ -104,7 +104,7 @@ final class FieldOps[P, F[_], V[_], E](private val field: Field[P]) extends AnyV
     assert(_ == C.value(compared), FW.equal[P, C](compared))
 
   /** Alias for [[notEqualTo]] */
-  def !==[C](compared: C)(implicit
+  def !==[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
       FW: FailWithCompare[E, P],
@@ -113,7 +113,7 @@ final class FieldOps[P, F[_], V[_], E](private val field: Field[P]) extends AnyV
     notEqualTo[C](compared)
 
   /** Validates that [[jap.fields.Field]]#value is not equal to `compared` */
-  def notEqualTo[C](compared: C)(implicit
+  def notEqualTo[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
       FW: FailWithCompare[E, P],
@@ -122,7 +122,7 @@ final class FieldOps[P, F[_], V[_], E](private val field: Field[P]) extends AnyV
     assert(_ != C.value(compared), FW.notEqual[P, C](compared))
 
   /** Validates that [[jap.fields.Field]]#value is contained by `seq` */
-  def in(seq: Seq[P])(implicit F: Effect[F], V: Validated[V], FW: FailWithOneOf[E, P]): Rule[F, V, E] =
+  def in(seq: => Seq[P])(implicit F: Effect[F], V: Validated[V], FW: FailWithOneOf[E, P]): Rule[F, V, E] =
     assert(seq.contains, FW.oneOf(seq))
 
   /** Combines all validations using AND */

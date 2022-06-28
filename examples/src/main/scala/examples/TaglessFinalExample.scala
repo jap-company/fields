@@ -1,3 +1,4 @@
+package jap.fields
 package examples
 package tagless
 
@@ -17,9 +18,10 @@ object DepositRequest {
 }
 
 object TaglessFinalExample {
+  showBuildInfo()
   import DefaultAccumulateVM._
-  final def main(args: Array[String]) = {
+  final def main(args: Array[String]): Unit = {
     val requestF = Field(DepositRequest("", -1))
-    println(requestF.validate)
+    showErrors("ERRORS")(requestF.validate)
   }
 }

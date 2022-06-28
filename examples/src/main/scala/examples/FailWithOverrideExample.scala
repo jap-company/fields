@@ -1,4 +1,6 @@
+package jap.fields
 package examples
+package tagless
 
 import cats.Eval
 import jap.fields._
@@ -21,14 +23,15 @@ trait ErrFailWithInstance {
   }
 }
 
-object ValidationModuleDeclaration {
+object Validation {
   import jap.fields.CatsInterop._
-  object VM extends AccumulateVM[Eval, ERR] with ErrFailWithInstance
+  object all extends AccumulateVM[Eval, ERR] with ErrFailWithInstance
 }
 
-import ValidationModuleDeclaration.VM._
+import Validation.all._
 
 object FailWithOverrideExample {
+  showBuildInfo()
   implicit object FailWithEmptyString extends FailWithCompare[ERR, String] {
     override def compare[P >: String](operation: CompareOperation, compared: String)(field: Field[P]): ERR =
       ERR(44)

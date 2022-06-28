@@ -22,6 +22,8 @@ import typeclass._
 trait ValidationPolicy[P, F[_], V[_], E] { self =>
   def validate(field: Field[P]): Rule[F, V, E]
 
+  def apply(field: Field[P]): Rule[F, V, E] = validate(field)
+
   /** Validates `field` using Policy and returns it as Either.Left if invalid and Either.Right if valid */
   def validateEither(field: Field[P])(implicit F: Effect[F], V: Validated[V]): F[Either[V[E], P]] =
     F.map(validate(field).effect)(vr => if (V.isValid(vr)) Right(field.value) else Left(vr))

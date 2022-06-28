@@ -1,8 +1,7 @@
+package jap.fields
 package examples
 package medium
 
-import jap.fields._
-import jap.fields.examples.Post.apply
 import zio.Task
 import zio._
 import zio.console._
@@ -32,6 +31,8 @@ case class PostValidationService(postRepo: PostRepo, userRepo: UserRepo) {
 }
 
 object MediumExample extends zio.App {
+  showBuildInfo()
+
   val post = MediumPost(
     postId = PostId(-1),
     title = "",
@@ -48,7 +49,7 @@ object MediumExample extends zio.App {
 
   val postF = Field.from(post)
 
-  println("//---- Field Examples ----//")
+  showTitle("FIELD-EXAMPLES-START")
   println(postF.path)
   println(Field(post.title).path)
   println(Field.from(post.title).path)
@@ -57,7 +58,7 @@ object MediumExample extends zio.App {
   println(Field.from(post.paragraphs("a")).path)
   println(postF.sub(_.paragraphs("a")).path)
   println(Field.from(post.tags.apply(3)).path)
-  println("//---- Field Examples ----//")
+  showTitle("FIELD-EXAMPLES-END")
 
   val userRepo = new UserRepo {
     def userExists(userId: UserId): Task[Boolean] = UIO(false)

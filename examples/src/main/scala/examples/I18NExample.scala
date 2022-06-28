@@ -1,5 +1,6 @@
 package jap.fields
 package examples
+package i18n
 
 import cats.conversions.variance
 import jap.fields.FieldPathConversions.*
@@ -62,8 +63,8 @@ object TranslatedError   {
   }
 }
 
-object ZioVM extends AccumulateVM[Task, TranslatedError]
-import ZioVM.*
+object Validation extends AccumulateVM[Task, TranslatedError]
+import Validation.*
 
 case class Post(
     id: Long,
@@ -120,6 +121,8 @@ final case class I18N(locales: Map[Locale, Map[String, String]]) {
 }
 
 object ZIOExample extends zio.App {
+  showBuildInfo()
+
   val i18n: I18N = I18N(
     Map(
       Locale.EN -> Map(

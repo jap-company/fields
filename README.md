@@ -21,6 +21,7 @@ Fields is a zero-dependency validation library for Scala.
 ## Quicklinks
 
 - [Microsite](https://jap-company.github.io/fields)
+- [Medium](https://medium.com/@oleh.dubynskiy/fields-scala-validation-library-86ac818cd704)
 - [Contributor's Guide](https://jap-company.github.io/fields/docs/contributing)
 - [License](LICENSE)
 - [Issues](https://github.com/jap-company/fields/issues)

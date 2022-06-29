@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Jap
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package jap.fields
 
 import jap.fields.syntax.all._
@@ -14,7 +30,7 @@ package object examples {
     println(before + name + after)
   }
 
-  def showErrors[F[_]: Effect, V[_]: Validated, E](title: String)(rule: Rule[F, V, E]): F[List[E]] =
+  def showErrors[F[_]: Effect, V[_]: Validated: HasErrors, E](title: String)(rule: Rule[F, V, E]): F[List[E]] =
     Effect[F].map(rule.errors) { errors =>
       showTitle(title)
       println(errors.mkString("\n"))

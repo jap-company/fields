@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Jap
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package jap
 
 import jap.fields.typeclass._
@@ -65,13 +81,6 @@ package object fields {
           else F.map(rb.unwrap)(bb => V.or(bb, aa))
         }
       }
-
-    /** Folds `Rule[F, V, E]` into `F[B]` */
-    def fold[F[_], V[_], E, B](rule: Rule[F, V, E])(onInvalid: V[E] => B, onValid: => B)(implicit
-        F: Effect[F],
-        V: Validated[V],
-    ): F[B] =
-      F.map(rule.unwrap)(V.fold(_)(onInvalid, onValid))
 
     /** Applies `rule` only when `test` pass */
     def when[F[_]: Effect, V[_]: Validated, E](test: => Boolean)(rule: => Rule[F, V, E]): Rule[F, V, E] =
@@ -149,10 +158,6 @@ package object fields {
         */
       def flatMap(f: V[E] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
         Rule.and(rule, Rule.modifyM(rule)(f))
-
-      /** See [[Rule.fold]] */
-      def fold[B](onInvalid: V[E] => B, onValid: => B)(implicit F: Effect[F], V: Validated[V]): F[B] =
-        Rule.fold(rule)(onInvalid, onValid)
     }
   }
 }

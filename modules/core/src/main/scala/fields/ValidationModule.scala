@@ -131,9 +131,6 @@ abstract class ValidationModule[F[_], V[_], E](implicit
     /** See [[Rule.orAll]] */
     def orAll(rules: List[MRule]): MRule = Rule.orAll(rules)
 
-    /** See [[Rule.fold]] */
-    def fold[B](rule: MRule)(onInvalid: V[E] => B, onValid: => B) = Rule.fold(rule)(onInvalid, onValid)
-
     /** See [[Rule.modify]] */
     def modify(rule: MRule)(f: V[E] => V[E]) = Rule.modify(rule)(f)
 

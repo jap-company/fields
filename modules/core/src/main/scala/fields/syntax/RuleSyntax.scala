@@ -61,9 +61,9 @@ final class RuleValidationOps[F[_], V[_], E](private val rule: Rule[F, V, E]) ex
   def isValid(implicit F: Effect[F], V: Validated[V]): F[Boolean] =
     F.map(rule.effect)(V.isValid)
 
-  /** Same as [[jap.fields.typeclass.Validated.errors]] but effectful */
-  def errors(implicit F: Effect[F], V: Validated[V]): F[List[E]] =
-    F.map(rule.effect)(V.errors[E])
+  /** Same as [[jap.fields.typeclass.HasErrors.errors]] but effectful */
+  def errors(implicit F: Effect[F], E: HasErrors[V]): F[List[E]] =
+    F.map(rule.effect)(E.errors[E])
 
   /** Same as [[jap.fields.typeclass.Validated.whenValid]] but effectful */
   def whenValid(b: => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =

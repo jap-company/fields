@@ -17,7 +17,7 @@
 package jap.fields
 package syntax
 
-import typeclass.Validated
+import typeclass._
 
 object ValidatedSyntax extends ValidatedSyntax
 trait ValidatedSyntax {
@@ -63,8 +63,8 @@ final class ValidatedOps[V[_], E](private val vr: V[E]) extends AnyVal {
   /** See [[jap.fields.typeclass.Validated.or]] */
   def ||(that: V[E])(implicit V: Validated[V]): V[E] = V.or(vr, that)
 
-  /** See [[jap.fields.typeclass.Validated.errors]] */
-  def errors(implicit V: Validated[V]): List[E] = V.errors(vr)
+  /** See [[jap.fields.typeclass.HasErrors.errors]] */
+  def errors(implicit E: HasErrors[V]): List[E] = E.errors(vr)
 
   /** See [[jap.fields.typeclass.Validated.when]] */
   def when(cond: Boolean)(implicit V: Validated[V]): V[E] = V.when(cond)(vr)

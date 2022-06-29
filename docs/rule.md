@@ -43,7 +43,6 @@ Rule.invalid("Rule.unwrap").unwrap.value
 Rule.invalid("Rule.effect").effect.value
 Rule.and(Rule.invalid("Rule.and.1"), Rule.invalid("Rule.and.2")).effect.value
 Rule.or(Rule.invalid("Rule.or"), Rule.valid).effect.value
-Rule.fold(Rule.invalid("Rule.fold"))(_.toString, "Valid").value
 Rule.when(true)(Rule.invalid("Rule.when")).effect.value
 Rule.whenF(Eval.later(true))(Rule.invalid("Rule.whenF")).effect.value
 Rule.ensure(V.invalid("Rule.ensure"))(false).effect.value

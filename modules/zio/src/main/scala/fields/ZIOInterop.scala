@@ -18,7 +18,7 @@ package jap.fields
 
 import zio._
 
-import typeclass.Effect
+import typeclass._
 
 object ZioInterop {
 
@@ -34,4 +34,17 @@ object ZioInterop {
     def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] = fa.flatMap(f)
     def map[A, B](fa: F[A])(f: A => B): F[B]        = fa.map(f)
   }
+
+  object ZioPolicySyntax extends ZioPolicySyntax
+  trait ZioPolicySyntax {
+    implicit def toFieldZioPolicyOps[P, V[_], E](field: Field[P]): ZioPolicyOps[P, V, E] = new ZioPolicyOps(field)
+  }
+}
+
+final class ZioPolicyOps[P, V[_], E](private val field: Field[P]) extends AnyVal {
+  def validateIO(implicit V: Validated[V], E: HasErrors[V], P: ValidationPolicy[P, UIO, V, E]): IO[List[E], P] =
+    P.validate(field).effect.flatMap { v =>
+      if (V.isValid(v)) IO.succeed(field.value)
+      else IO.fail(E.errors(v))
+    }
 }

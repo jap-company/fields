@@ -22,30 +22,31 @@ import jap.fields.error.ValidationError
 import jap.fields.fail._
 import jap.fields.typeclass._
 trait CatsInteropInstances0 {
-  type ValidatedUK[L[_], E] = CatsValidated[L[E], Unit]
-  type ValidatedNecUnit[E]  = CatsValidated[NonEmptyChain[E], Unit]
-  type ValidatedNelUnit[E]  = CatsValidated[NonEmptyList[E], Unit]
+  type ValidatedAccumulate[K[_], E] = CatsValidated[K[E], Unit]
+  type ValidatedAccumulateNec[E]    = CatsValidated[NonEmptyChain[E], Unit]
+  type ValidatedAccumulateNel[E]    = CatsValidated[NonEmptyList[E], Unit]
 
-  implicit def toFromCatsValidated[L[_]: Applicative: SemigroupK: Foldable]: FromCatsValidated[L] =
-    new FromCatsValidated[L]
+  implicit def toFromCatsValidated[K[_]: Applicative: SemigroupK]: FromCatsValidated[K] =
+    new FromCatsValidated[K]
 
   /** Validated instance for `cats.data.Validated` where error is collection type like `cats.data.NonEmptyList` or
     * `cats.data.NonEmptyChain`
     */
-  class FromCatsValidated[L[_]](implicit A: Applicative[L], SK: SemigroupK[L], F: Foldable[L])
-      extends AccumulateLike[ValidatedUK[L, _]] {
-    def map[E, B](a: TypeClass[E])(f: E => B): TypeClass[B]    = a.leftMap(l => A.map[E, B](l)(f))
-    def isValid[E](e: TypeClass[E]): Boolean                   = e.isValid
-    def and[E](a: TypeClass[E], b: TypeClass[E]): TypeClass[E] = a.combine(b)(SK.algebra[E], implicitly)
-    def errors[E](vr: TypeClass[E]): List[E]                   = vr.fold(F.toList, _ => Nil)
-    def valid[E]: TypeClass[E]                                 = CatsValidated.valid(())
-    def invalid[E](e: E): TypeClass[E]                         = CatsValidated.invalid(A.pure(e))
+  class FromCatsValidated[K[_]](implicit
+      A: Applicative[K],
+      SK: SemigroupK[K],
+  ) extends AccumulateLike[ValidatedAccumulate[K, _]] {
+    type V[E] = ValidatedAccumulate[K, E]
+    def valid[E]: V[E]                 = CatsValidated.valid(())
+    def invalid[E](e: E): V[E]         = CatsValidated.invalid(A.pure(e))
+    def isValid[E](v: V[E]): Boolean   = v.isValid
+    def and[E](a: V[E], b: V[E]): V[E] = a.combine(b)(SK.algebra[E], implicitly)
   }
 }
 
 trait CatsInteropInstances extends CatsInteropInstances0 {
-  implicit val validatedNeqV: Validated[ValidatedNecUnit] = new FromCatsValidated[NonEmptyChain]
-  implicit val validatedNelV: Validated[ValidatedNelUnit] = new FromCatsValidated[NonEmptyList]
+  implicit val catsValidatedNecValidated: Validated[ValidatedAccumulateNec] = new FromCatsValidated[NonEmptyChain]
+  implicit val catsValidatedNelValidated: Validated[ValidatedAccumulateNel] = new FromCatsValidated[NonEmptyList]
 }
 
 object CatsInterop extends CatsInteropInstances {
@@ -60,10 +61,10 @@ object CatsInterop extends CatsInteropInstances {
   }
 
   /** Base trait for ValidationModule where [[jap.fields.typeclass.Validated]] is Validated[NonEmptyChain[E], Unit] */
-  abstract class ValidatedNecVM[F[_]: Effect, E] extends ValidationModule[F, ValidatedNecUnit, E]
+  abstract class ValidatedNecVM[F[_]: Effect, E] extends ValidationModule[F, ValidatedAccumulateNec, E]
 
   /** Base trait for ValidationModule where [[jap.fields.typeclass.Validated]] is Validated[NonEmptyList[E], Unit] */
-  abstract class ValidatedNelVM[F[_]: Effect, E] extends ValidationModule[F, ValidatedNelUnit, E]
+  abstract class ValidatedNelVM[F[_]: Effect, E] extends ValidationModule[F, ValidatedAccumulateNel, E]
 
   /** Default ValidationModule where:
     *   - Effect is [[jap.fields.typeclass.Effect.Sync]]

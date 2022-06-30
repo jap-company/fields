@@ -25,8 +25,11 @@ trait ValidationPolicy[P, F[_], V[_], E] { self =>
   def apply(field: Field[P]): Rule[F, V, E] = validate(field)
 
   /** Validates `field` using Policy and returns it as Either.Left if invalid and Either.Right if valid */
-  def validateEither(field: Field[P])(implicit F: Effect[F], V: Validated[V]): F[Either[V[E], P]] =
-    F.map(validate(field).effect)(vr => if (V.isValid(vr)) Right(field.value) else Left(vr))
+  def validateEither(field: Field[P])(implicit F: Effect[F], V: Validated[V], E: HasErrors[V]): F[Either[List[E], P]] =
+    F.map(validate(field).effect) { v =>
+      if (V.isValid(v)) Right(field.value)
+      else Left(E.errors(v))
+    }
 }
 
 object ValidationPolicy {

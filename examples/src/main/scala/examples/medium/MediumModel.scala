@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Jap
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package jap.fields
 package examples
 package medium
@@ -40,10 +56,7 @@ object MediumPost       {
       .subRule(_.title)(_.minSize(6), _.maxSize(255))
       .subRule(_.description)(_.some(_.nonBlank))
       .subRule(_.tags)(_.nonEmpty, _.maxSize(12), _.each(_.all(_.minSize(3), _.notEqualTo("JAVA"))))
-      .subRule(_.creationDate, _.updateDate)(
-        (c, u) => c.validate && u.validate,
-        _ < _,
-      )
+      .subRule(_.creationDate, _.updateDate)((c, u) => c < u, (c, u) => c.validate && u.validate)
       .subRule(_.paragraphs)(_.eachKey(_.nonEmpty), _.eachValue(validateParagraphContent))
       .build
 

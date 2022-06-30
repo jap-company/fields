@@ -25,7 +25,6 @@ trait FailFastLike[V[_]] extends Validated[V] { val strategy: ValidatedStrategy 
 
 /** Typeclass that represents Validated */
 trait Validated[V[_]] {
-  type TypeClass[E] = V[E]
 
   /** Returns this Strategy */
   def strategy: ValidatedStrategy
@@ -39,23 +38,14 @@ trait Validated[V[_]] {
   /** Checks if `v` is valid */
   def isValid[E](v: V[E]): Boolean
 
-  /** Checks if `v` is invalid */
-  def isInvalid[E](v: V[E]): Boolean = !isValid(v)
-
-  /** Returns `v` errors as [[scala.collection.immutable.List]] */
-  def errors[E](v: V[E]): List[E]
-
   /** Combines `a` and `b` using AND */
   def and[E](va: V[E], vb: V[E]): V[E]
 
+  /** Checks if `v` is invalid */
+  def isInvalid[E](v: V[E]): Boolean = !isValid(v)
+
   /** Combines `a` and `b` using OR */
   def or[E](va: V[E], vb: V[E]): V[E] = if (isValid(va) || isValid(vb)) valid else and(va, vb)
-
-  /** Folds `V[E]` into `B` using provided functions for valid and invalid cases */
-  def fold[E, B](v: V[E])(fe: V[E] => B, fa: => B) = if (isValid(v)) fa else fe(v)
-
-  /** Maps `v` using `f` function */
-  def map[E, B](v: V[E])(f: E => B): V[B]
 
   /** Returns `error` if `v` is invalid */
   def asError[E](v: V[E])(error: E): V[E] = whenInvalid[E](v)(_ => invalid(error))
@@ -75,7 +65,7 @@ trait Validated[V[_]] {
   /** Returns `v` if `cond` is false else returns valid */
   def unless[E](cond: Boolean)(v: => V[E]): V[E] = if (cond) valid[E] else v
 
-  /** Combiness all `list` using AND */
+  /** `Validated.andAll` alias */
   def sequence[E](list: List[V[E]]): V[E] = andAll[E](list)
 
   /** Combiness all `list` using AND */
@@ -84,11 +74,11 @@ trait Validated[V[_]] {
   /** Combiness all `list` using OR */
   def orAll[E](list: List[V[E]]): V[E] = FoldUtil.fold[V[E]](list, valid[E], or[E])
 
-  def traverse[A, E](list: List[A])(error: A => V[E]): V[E] =
-    sequence(list.map(error))
+  /** Traverse over `list` applying `f` to each element and combining all using `Validated.sequence` */
+  def traverse[A, E](list: List[A])(f: A => V[E]): V[E] = sequence(list.map(f))
 
-  def traverse[A, E](list: A*)(error: A => V[E]): V[E] =
-    sequence(list.toList.map(error))
+  /** Traverse over `list` applying `f` to each element and combining all using `Validated.sequence` */
+  def traverse[A, E](list: A*)(f: A => V[E]): V[E] = sequence(list.toList.map(f))
 }
 
 object Validated {
@@ -97,30 +87,24 @@ object Validated {
   def apply[V[_]](implicit V: Validated[V]): Validated[V] = V
 
   implicit object ListValidated extends AccumulateLike[List] {
-    def map[E, B](v: List[E])(f: E => B): List[B] = v.map(f)
-    def isValid[E](v: List[E]): Boolean           = v.isEmpty
     def valid[E]: List[E]                         = Nil
-    def errors[E](v: List[E]): List[E]            = v
     def invalid[E](e: E): List[E]                 = List(e)
     def and[E](va: List[E], vb: List[E]): List[E] = va ++ vb
+    def isValid[E](v: List[E]): Boolean           = v.isEmpty
   }
 
   implicit object EitherUnitValidated extends FailFastLike[Either[_, Unit]] {
     def valid[E]: Either[E, Unit]                                         = Right(())
     def invalid[E](e: E): Either[E, Unit]                                 = Left(e)
-    def isValid[E](v: Either[E, Unit]): Boolean                           = v.isRight
     def and[E](va: Either[E, Unit], vb: Either[E, Unit]): Either[E, Unit] = va.flatMap(_ => vb)
-    def errors[E](v: Either[E, Unit]): List[E]                            = v.left.toSeq.toList
-    def map[E, B](v: Either[E, Unit])(f: E => B): Either[B, Unit]         = v.left.map(f)
+    def isValid[E](v: Either[E, Unit]): Boolean                           = v.isRight
   }
 
   implicit object OptionValidated extends FailFastLike[Option] {
-    def map[E, B](v: Option[E])(f: E => B): Option[B]   = v.map(f)
-    def isValid[E](v: Option[E]): Boolean               = v.isEmpty
     def valid[E]: Option[E]                             = None
     def invalid[E](e: E): Option[E]                     = Some(e)
-    def errors[E](v: Option[E]): List[E]                = v.toList
     def and[E](va: Option[E], vb: Option[E]): Option[E] = va.orElse(vb)
+    def isValid[E](v: Option[E]): Boolean               = v.isEmpty
   }
 }
 

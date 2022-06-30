@@ -137,6 +137,11 @@ final class FieldOps[P, F[_], V[_], E](private val field: Field[P]) extends AnyV
   def validate(implicit P: ValidationPolicy[P, F, V, E]): Rule[F, V, E] = P.validate(field)
 
   /** Validates [[jap.fields.Field]] using implicit [[ValidationPolicy]] */
-  def validateEither(implicit F: Effect[F], V: Validated[V], P: ValidationPolicy[P, F, V, E]): F[Either[V[E], P]] =
+  def validateEither(implicit
+      F: Effect[F],
+      V: Validated[V],
+      P: ValidationPolicy[P, F, V, E],
+      E: HasErrors[V],
+  ): F[Either[List[E], P]] =
     P.validateEither(field)
 }

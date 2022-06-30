@@ -8,13 +8,41 @@
 
 [![badge-scaladex]][link-scaladex] [![badge-maven]][link-maven] [![badge-ci]][link-ci] [![badge-scaladoc]][link-scaladoc] [![badge-scala-ukraine]][link-scala-ukraine]
 
-Fields is a zero-dependency validation library for Scala.
+Fields is a Scala validation library that you should use because it is:
 
-- **Configurable**. Choose any Effect, Validated or Error types.
-- **Expressive**. Rich extendable validation syntax
-- **Informative**. Error paths helps understanding where the error occured
-- **Short-circuit**. Accumulate/FailFast validation strategies are supported.
-- **Interop**. Has ZIO and Cats interop modules.
+- _**F**inal Tagless_. Choose any Effect, Validated, or Error types.
+- _**I**nformative_. Error paths help understanding where the error occurred.
+- _**E**xpressive_. Rich, extendable validation syntax.
+- _**L**ightweight_. The core module has no-dependencies.
+- _**D**auntless_. Have no fear of complex validations with `Rule` type.
+- _**S**hort-circuit_. Avoid running undesired validation side-effects.
+
+# Teaser
+
+```scala
+implicit def policy(implicit tokenService: TokenService, userService: UserService): Policy[RegisterRequest] = Policy
+  .builder[RegisterRequest]
+  .subRule(_.age)(_ >= 18, _ <= 110)
+  .subRule(_.email)(_.map(_.value).matchesRegex(EmailRegex))
+  .subRule(_.password)(_.nonEmpty, _.minSize(4), _.maxSize(100))
+  .subRule(_.password, _.passwordRepeat)(_ equalTo _)
+  .subRule(_.username)(validateUsername)
+  .subRule(_.token)(_.ensureF(tokenService.validateToken, _.failMessage("invalid-token")))
+  .build
+
+def validateUsername(username: Field[String])(implicit userService: UserService): Rule[zio.Task, Accumulate, ValidationError] =
+    username.minSize(1) &&
+    username.maxSize(10) &&
+    Rule {
+      userService.findByUsername(usernameF.value).flatMap { (user: Option[User]) =>
+        user match {
+          case Some(_) => usernameF.failMessage("username-already-exists").effect
+          case None    => Rule.valid.effect
+        }
+      }
+    }
+
+```
 
 ## Quicklinks
 

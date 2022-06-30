@@ -22,7 +22,7 @@ const repoUrl = 'https://github.com/jap-company/fields'
 // const site = local
 const site = github
 const title = 'Fields'
-const tagline = 'Lightweight and extendable validation library for Scala'
+const tagline = 'Scala validation library written in Tagless Final.'
 const keywords = ['fields', 'scala', 'validation', 'library', 'macros', 'zio', 'cats', 'short-circuit', 'scala 3', 'scala 2.12', 'scala 2.13', 'tagless-final', 'error paths']
 
 /** @type {import('@docusaurus/types').Config} */

@@ -4,11 +4,9 @@
     <img src="assets/jap-logo.png" alt="Jap Logo"/>
 </p>
 
-| Scaladex                           | Maven                        | CI                     | Telegram                           | Scaladoc                           |
-| ---------------------------------- | ---------------------------- | ---------------------- | ---------------------------------- | ---------------------------------- |
-| [![badge-scaladex]][link-scaladex] | [![badge-maven]][link-maven] | [![badge-ci]][link-ci] | [![badge-telegram]][link-telegram] | [![badge-scaladoc]][link-scaladoc] |
-
 # Fields
+
+[![badge-scaladex]][link-scaladex] [![badge-maven]][link-maven] [![badge-ci]][link-ci] [![badge-scaladoc]][link-scaladoc] [![badge-scala-ukraine]][link-scala-ukraine]
 
 Fields is a zero-dependency validation library for Scala.
 
@@ -32,10 +30,10 @@ Fields is a zero-dependency validation library for Scala.
 [link-scaladex]: https://index.scala-lang.org/jap-company/fields/fields-core "Scaladex"
 [link-maven]: https://maven-badges.herokuapp.com/maven-central/company.jap/fields-core_2.13 "Maven"
 [link-ci]: https://github.com/jap-company/fields/actions?query=workflow%3A%22CI%22 "CI"
-[link-telegram]: https://t.me/jap_fields "Telegram"
+[link-scala-ukraine]: https://github.com/scala-ukraine/knowledge-base "Scala Ukraine"
 [link-scaladoc]: https://jap-company.github.io/fields/api "Scaladoc"
 [badge-ci]: https://github.com/jap-company/fields/workflows/CI/badge.svg "CI"
 [badge-maven]: https://maven-badges.herokuapp.com/maven-central/company.jap/fields-core_2.13/badge.svg "Maven"
 [badge-scaladex]: https://index.scala-lang.org/jap-company/fields/fields-core/latest-by-scala-version.svg?platform=jvm "Scaladex"
-[badge-telegram]: https://img.shields.io/badge/telegram-chat-brightgreen "Telegram"
+[badge-scala-ukraine]: https://img.shields.io/badge/Scala-Ukraine-EBD038?labelColor=4172CC "Scala Ukraine"
 [badge-scaladoc]: https://img.shields.io/badge/scaladoc-read-brightgreen "Scaladoc"

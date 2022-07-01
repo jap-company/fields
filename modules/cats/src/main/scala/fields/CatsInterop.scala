@@ -67,18 +67,18 @@ object CatsInterop extends CatsInteropInstances {
   abstract class ValidatedNelVM[F[_]: Effect, E] extends ValidationModule[F, ValidatedAccumulateNel, E]
 
   /** Default ValidationModule where:
-    *   - Effect is [[jap.fields.typeclass.Effect.Sync]]
+    *   - Effect is `cats.Eval`
     *   - Validated is Validated[NonEmptyList[E], Unit]
     *   - Error is ValidationError
     */
-  trait DefaultValidatedNelVM  extends ValidatedNelVM[Effect.Sync, ValidationError] with CanFailWithValidationError
+  trait DefaultValidatedNelVM  extends ValidatedNelVM[Eval, ValidationError] with CanFailWithValidationError
   object DefaultValidatedNelVM extends DefaultValidatedNelVM
 
   /** Default ValidationModule where:
-    *   - Effect is [[jap.fields.typeclass.Effect.Sync]]
+    *   - Effect is `cats.Eval`
     *   - Validated is Validated[NonEmptyChain[E], Unit]
     *   - Error is ValidationError
     */
-  trait DefaultValidatedNecVM  extends ValidatedNecVM[Effect.Sync, ValidationError] with CanFailWithValidationError
+  trait DefaultValidatedNecVM  extends ValidatedNecVM[Eval, ValidationError] with CanFailWithValidationError
   object DefaultValidatedNecVM extends DefaultValidatedNecVM
 }

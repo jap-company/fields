@@ -28,14 +28,6 @@ trait RuleSyntax {
     new RuleSequenceOps(rules)
 }
 
-trait ModuleRuleSyntax[F[_], V[_], E] { M: ValidationModule[F, V, E] =>
-  implicit final def toRuleValidationOps(rule: Rule[F, V, E]): RuleValidationOps[F, V, E] =
-    new RuleValidationOps[F, V, E](rule)
-
-  implicit final def toRuleSequenceOps(rules: Iterable[Rule[F, V, E]]): RuleSequenceOps[F, V, E] =
-    new RuleSequenceOps(rules)
-}
-
 final class RuleSequenceOps[F[_], V[_], E](private val rules: Iterable[Rule[F, V, E]]) extends AnyVal {
 
   /** See [[Rule.andAll]] */

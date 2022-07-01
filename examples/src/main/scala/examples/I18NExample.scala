@@ -136,7 +136,7 @@ final case class I18N(locales: Map[Locale, Map[String, String]]) {
     )
 }
 
-object ZIOExample extends zio.App {
+object I18NExample extends zio.App {
   showBuildInfo()
 
   val i18n: I18N = I18N(

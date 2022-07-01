@@ -22,12 +22,12 @@ package object fields {
   /** Rule is tagged type alias for F[V[E]] If used this way we do not add any allocations while having separate syntax
     * for Rule. Also we get ability to convert back and forth.
     */
-  type Rule[F[_], V[_], E] <: Rule.Type[F, V, E]
+  type Rule[+F[_], +V[_], +E] <: Rule.Type[F, V, E]
   object Rule {
     // ----TAGGED---- //
-    trait Tag[F[_], V[_], +E] extends Any
-    type Base[F[_], V[_], +E] = Any { type __Rule__ }
-    type Type[F[_], V[_], +E] <: Base[F, V, E] with Tag[F, V, E]
+    trait Tag[+F[_], +V[_], +E] extends Any
+    type Base[+F[_], +V[_], +E] = Any { type __Rule__ }
+    type Type[+F[_], +V[_], +E] <: Base[F, V, E] with Tag[F, V, E]
 
     /** Same as [[Rule.wrap]] */
     @inline def apply[F[_], V[_], E](effect: F[V[E]]): Rule[F, V, E] = wrap(effect)
@@ -91,7 +91,7 @@ package object fields {
         F: Effect[F],
         V: Validated[V],
     ): Rule[F, V, E] =
-      effect(F.flatMap(F.defer(test))(if (_) rule.unwrap else valid.unwrap))
+      effect[F, V, E](F.flatMap(F.defer(test))(if (_) rule.unwrap else valid.unwrap))
 
     /** Ensures that if `test` pass else returns provided `V[E]` */
     def ensure[F[_], V[_], E](v: => V[E])(test: => Boolean)(implicit
@@ -105,7 +105,7 @@ package object fields {
         F: Effect[F],
         V: Validated[V],
     ): Rule[F, V, E] =
-      effect(F.map(F.defer(test))(if (_) V.valid else v))
+      effect[F, V, E](F.map(F.defer(test))(if (_) V.valid else v))
 
     /** Asserts that if `test` pass else returns provided `E` */
     def assert[F[_], V[_], E](e: => E)(test: => Boolean)(implicit

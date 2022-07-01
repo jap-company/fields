@@ -35,6 +35,9 @@ object ZioInterop {
     def map[A, B](fa: F[A])(f: A => B): F[B]        = fa.map(f)
   }
 
+  object ZioSyntaxAll extends ZioSyntaxAll
+  trait ZioSyntaxAll  extends ZioPolicySyntax
+
   object ZioPolicySyntax extends ZioPolicySyntax
   trait ZioPolicySyntax {
     implicit def toFieldZioPolicyOps[P, V[_], E](field: Field[P]): ZioPolicyOps[P, V, E] = new ZioPolicyOps(field)

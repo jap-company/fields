@@ -40,31 +40,33 @@ case class HealthReport(
     bloodPressure: Int,
 )
 
-object Validation extends all with CanFailWithValidationError {
-  type Policy[P, F[_]] = ValidationPolicy[P, F, Accumulate, ValidationError]
-  object Policy {
-    def builder[P, F[_]: Effect]: ValidationPolicyBuilder[P, F, Accumulate, ValidationError] = ValidationPolicy.builder
+object Validation extends all with ZioSyntaxAll with CanFailWithValidationError {
+  type ZRule[R]      = Rule[RIO[R, *], Accumulate, ValidationError]
+  type ZPolicy[R, P] = ValidationPolicy[P, RIO[R, *], Accumulate, ValidationError]
+  object ZPolicy {
+    def builder[R, P]: ValidationPolicyBuilder[P, RIO[R, *], Accumulate, ValidationError] = ValidationPolicy.builder
   }
 }
 import Validation._
 
 object HealthReport {
-  type HealthIO[A] = RIO[Has[BloodPressureApi] with Has[HeartbeatApi], A]
-  implicit val policy: Policy[HealthReport, HealthIO] =
-    Policy
-      .builder[HealthReport, HealthIO]
-      .subRule(_.heartbeat)(
-        _.ensureF(
-          h => ZIO.serviceWith[HeartbeatApi](_.isHeartbeatOk(h)),
-          _.failMessage("Check your heartbeat please"),
-        )
-      )
-      .subRule(_.bloodPressure)(
-        _.ensureF(
-          h => ZIO.serviceWith[BloodPressureApi](_.isBloodPressureOk(h)),
-          _.failMessage("Check your bloodpressure please"),
-        )
-      )
+  def validateHeartbeat(heartbeat: Field[Int]): ZRule[Has[HeartbeatApi]] =
+    heartbeat.ensureF(
+      h => ZIO.serviceWith[HeartbeatApi](_.isHeartbeatOk(h)),
+      _.failMessage("Check your heartbeat please"),
+    )
+
+  def validateBloodPressure(bloodPressure: Field[Int]): ZRule[Has[BloodPressureApi]] =
+    bloodPressure.ensureF(
+      h => ZIO.serviceWith[BloodPressureApi](_.isBloodPressureOk(h)),
+      _.failMessage("Check your bloodpressure please"),
+    )
+
+  implicit val policy: ZPolicy[Has[BloodPressureApi] with Has[HeartbeatApi], HealthReport] =
+    ZPolicy
+      .builder[Has[BloodPressureApi] with Has[HeartbeatApi], HealthReport]
+      .subRule(_.heartbeat)(validateHeartbeat)
+      .subRule(_.bloodPressure)(validateBloodPressure)
       .build
 }
 

@@ -107,6 +107,18 @@ package object fields {
     ): Rule[F, V, E] =
       effect(F.map(F.defer(test))(if (_) V.valid else v))
 
+    /** Asserts that if `test` pass else returns provided `E` */
+    def assert[F[_], V[_], E](e: => E)(test: => Boolean)(implicit
+        F: Effect[F],
+        V: Validated[V],
+    ): Rule[F, V, E] = ensure(V.invalid(e))(test)
+
+    /** Asserts that if `test` pass else returns provided `E` */
+    def assertF[F[_], V[_], E](e: => E)(test: => F[Boolean])(implicit
+        F: Effect[F],
+        V: Validated[V],
+    ): Rule[F, V, E] = ensureF(V.invalid(e))(test)
+
     /** Combines all rules using AND */
     def andAll[F[_]: Effect, V[_]: Validated, E](rules: List[Rule[F, V, E]]): Rule[F, V, E] =
       FoldUtil.fold[Rule[F, V, E]](rules, valid, and)

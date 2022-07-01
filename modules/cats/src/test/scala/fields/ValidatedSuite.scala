@@ -11,7 +11,7 @@ class ValidatedSuite extends munit.FunSuite {
     val field = Field(FieldPath.Root, 12)
     val vr    = field > 13 && field > 14 && (field > 15 || field === 12)
     assertEquals(
-      vr.effect,
+      vr.effect.value,
       Validated.invalid(
         NonEmptyChain(
           field.greaterError(13),
@@ -26,7 +26,7 @@ class ValidatedSuite extends munit.FunSuite {
     val field = Field(FieldPath.Root, 12)
     val vr    = field > 13 && field > 14 && (field > 15 || field === 12)
     assertEquals(
-      vr.effect,
+      vr.effect.value,
       Validated.invalid(
         NonEmptyList(
           field.greaterError(13),

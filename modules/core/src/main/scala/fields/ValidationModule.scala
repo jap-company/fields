@@ -55,12 +55,12 @@ abstract class ValidationModule[F[_], V[_], E](implicit
     val V: Validated[V],
 ) extends ModuleGenericSyntax[F, V, E]
     with ModuleBooleanSyntax[F, V, E]
-    with ModuleRuleSyntax[F, V, E]
     with ModuleOrderingSyntax[F, V, E]
     with ModuleOptionSyntax[F, V, E]
     with ModuleStringSyntax[F, V, E]
     with ModuleMapSyntax[F, V, E]
     with ModuleIterableSyntax[F, V, E]
+    with RuleSyntax
     with PolicySyntax
     with FieldSyntax
     with ValidatedSyntax {

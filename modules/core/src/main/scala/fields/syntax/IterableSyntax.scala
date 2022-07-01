@@ -23,18 +23,20 @@ import typeclass._
 import fail._
 
 trait ModuleIterableSyntax[F[_], V[_], E] { self: ValidationModule[F, V, E] =>
-  implicit final def toIterableFieldOps[I[_] <: Iterable[?], P](field: Field[I[P]]): IterableFieldOps[I, P, F, V, E] =
+  implicit final def toIterableFieldOps[P, I[X] <: Iterable[X]](
+      field: Field[I[P]]
+  ): IterableFieldOps[P, I, F, V, E] =
     new IterableFieldOps(field)
 }
 
 object IterableSyntax extends IterableSyntax
 trait IterableSyntax {
-  implicit final def toIterableFieldOps[F[_], V[_], E, I[_] <: Iterable[?], P](
+  implicit final def toIterableFieldOps[F[_], V[_], E, P, I[X] <: Iterable[X]](
       field: Field[I[P]]
-  ): IterableFieldOps[I, P, F, V, E] = new IterableFieldOps(field)
+  ): IterableFieldOps[P, I, F, V, E] = new IterableFieldOps(field)
 }
 
-final class IterableFieldOps[I[_] <: Iterable[?], P, F[_], V[_], E](private val field: Field[I[P]]) extends AnyVal {
+final class IterableFieldOps[P, I[X] <: Iterable[X], F[_], V[_], E](private val field: Field[I[P]]) extends AnyVal {
 
   /** Checks that collection is empty */
   def isEmpty(implicit F: Effect[F], V: Validated[V], FW: FailWithEmpty[E, I[P]]): Rule[F, V, E] =
@@ -57,16 +59,24 @@ final class IterableFieldOps[I[_] <: Iterable[?], P, F[_], V[_], E](private val 
     eachWithIndex((f, _) => check(f))
 
   /** Applies `check` to each collection element */
-  @nowarn
   def eachWithIndex(check: (Field[P], Int) => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
-    Rule.andAll(field.value.zipWithIndex.map { case (p: P, i) => check(field.provideSub(i.toString, p), i) }.toList)
+    Rule.andAll(field.value.zipWithIndex.map { case (p, i) => check(field.provideSub(i.toString, p), i) }.toList)
 
   /** Applies `check` to each collection element, any should succeed */
   def any(check: Field[P] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
     anyWithIndex((f, _) => check(f))
 
   /** Applies `check` to each collection element, any should succeed */
-  @nowarn
   def anyWithIndex(check: (Field[P], Int) => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
-    Rule.orAll(field.value.zipWithIndex.map { case (p: P, i) => check(field.provideSub(i.toString, p), i) }.toList)
+    Rule.orAll(field.value.zipWithIndex.map { case (p, i) => check(field.provideSub(i.toString, p), i) }.toList)
+
+  /** Verifies that collection has distinct elements using `by` property and fails duplicated items using `fail` */
+  @nowarn
+  def isDistinctBy[K](by: P => K, fail: Field[P] => V[E])(implicit F: Effect[F], V: Validated[V]) = {
+    val distinct = field.value.groupBy(by).mapValues(_.size == 1)
+    each(item => Rule.ensure[F, V, E](fail(item))(distinct.getOrElse(by(item.value), false)))
+  }
+
+  /** Verifies that collection has distinct elements and fails duplicated items using `fail` */
+  def isDistinct(fail: Field[P] => V[E])(implicit F: Effect[F], V: Validated[V]) = isDistinctBy(identity, fail)
 }

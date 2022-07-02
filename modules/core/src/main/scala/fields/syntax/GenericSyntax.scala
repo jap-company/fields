@@ -19,6 +19,7 @@ package syntax
 
 import typeclass._
 import fail._
+import scala.reflect.ClassTag
 
 trait ModuleGenericSyntax[F[_], V[_], E] { M: ValidationModule[F, V, E] =>
   implicit final def toFieldOps[P](field: Field[P]): FieldOps[P, F, V, E] =
@@ -52,6 +53,19 @@ final class FieldOps[P, F[_], V[_], E](private val field: Field[P]) extends AnyV
       F: Effect[F],
       V: Validated[V],
   ): Rule[F, V, E] = Rule.whenF(test(field.value))(rule(field))
+
+  /** Runs rule for subtype `PP` else is valid */
+  def whenType[PP <: P](rule: Field[PP] => Rule[F, V, E])(implicit
+      F: Effect[F],
+      V: Validated[V],
+      CT: ClassTag[PP],
+  ): Rule[F, V, E] =
+    Rule.defer {
+      field.value match {
+        case _: PP => rule(field.asInstanceOf[Field[PP]])
+        case _     => Rule.valid[F, V, E]
+      }
+    }
 
   /** See [[Rule.ensure]] */
   def ensure(test: P => Boolean, error: Field[P] => V[E])(implicit

@@ -27,15 +27,13 @@ import MediumValidation._
 case class PostId(value: Int)             extends AnyVal
 case class UserId(value: Int)             extends AnyVal
 case class PostDate(value: LocalDateTime) extends AnyVal
-object PostDate         {
+object PostDate {
   implicit val policy: Policy[PostDate]     = _ > PostDate(LocalDateTime.now)
   implicit val ordering: Ordering[PostDate] = Ordering.by(_.value)
 }
 sealed trait ParagraphContent
-object ParagraphContent {
-  case class Link(value: String) extends ParagraphContent
-  case class Text(value: String) extends ParagraphContent
-}
+case class Link(value: String) extends ParagraphContent
+case class Text(value: String) extends ParagraphContent
 
 case class MediumPost(
     postId: PostId,
@@ -47,7 +45,7 @@ case class MediumPost(
     authorId: UserId,
     paragraphs: Map[String, ParagraphContent],
 )
-object MediumPost       {
+object MediumPost {
   implicit val policy: Policy[MediumPost] =
     Policy
       .builder[MediumPost]
@@ -61,13 +59,7 @@ object MediumPost       {
       .build
 
   def validateParagraphContent(content: Field[ParagraphContent]): MRule = {
-    content.value match {
-      case link: ParagraphContent.Link =>
-        val urlF = content.withValue(link.value)
-        urlF.all(_.minSize(10), _.maxSize(50))
-      case text: ParagraphContent.Text =>
-        val textF = content.withValue(text.value)
-        textF.all(_.minSize(10), _.maxSize(50))
-    }
+    content.whenType[Link](_.map(_.value).all(_.minSize(10), _.maxSize(60))) &&
+    content.whenType[Text](_.map(_.value).all(_.minSize(4), _.maxSize(50)))
   }
 }

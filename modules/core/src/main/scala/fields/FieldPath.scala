@@ -16,16 +16,16 @@
 
 package jap.fields
 
-/** [[jap.fields.FieldPath]] contains path parts of the Field.
-  */
+/** [[jap.fields.FieldPath]] contains path parts of the Field. */
 final case class FieldPath(private val parts: List[String]) extends AnyVal {
 
-  /** Is current path root.
-    */
-  def isRoot = parts.isEmpty
+  /** Accessor to parts */
+  def toList: List[String] = parts
 
-  /** Full name of the path is dot-separated parts of this path. For root path this will be "root" (Object of discussion
-    * what this should be)
+  /** Is current path root. */
+  def isRoot: Boolean = parts.isEmpty
+
+  /** Full name of the path is dot-separated parts of this path. For root path this will be "."
     */
   def full: String = if (isRoot) FieldPath.RootName else parts.mkString(".")
 
@@ -33,16 +33,13 @@ final case class FieldPath(private val parts: List[String]) extends AnyVal {
     */
   def name: String = parts.lastOption.getOrElse(FieldPath.RootName)
 
-  /** Changes name of this path
-    */
+  /** Changes name of this path */
   def named(name: String): FieldPath = FieldPath(parts.dropRight(1) :+ name)
 
-  /** Append other [[jap.fields.FieldPath]] to current path
-    */
+  /** Append other [[jap.fields.FieldPath]] to current path */
   def ++(path: FieldPath): FieldPath = FieldPath(parts ++ path.parts)
 
-  /** Append other path part to current path
-    */
+  /** Append other path part to current path */
   def +(path: String): FieldPath = FieldPath(parts :+ path)
 
   override def toString: String = full
@@ -51,7 +48,7 @@ final case class FieldPath(private val parts: List[String]) extends AnyVal {
 object FieldPath {
 
   /** Name of the FieldPath that has empty `parts` */
-  val RootName = "root"
+  val RootName = "."
 
   /** Root FieldPath */
   val Root = FieldPath()

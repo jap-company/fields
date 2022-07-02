@@ -23,10 +23,10 @@ final case class Field[+P](
 ) {
 
   /** Returns [[jap.fields.FieldPath.name]] of `path` */
-  val name = path.name
+  def name = path.name
 
   /** Returns [[jap.fields.FieldPath.full]] of `path` */
-  val fullPath = path.full
+  def fullPath = path.full
 
   /** Creates new [[jap.fields.Field]] with provided `value` and `name`. Prepends current fields `path` to this field
     * `path`

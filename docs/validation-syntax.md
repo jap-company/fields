@@ -24,6 +24,16 @@ field.when(false)(_ !== field.value)
 field.unless(true)(_ !== field.value)
 implicit val policy: Policy[Int] = _ < 0
 field.validate
+
+sealed trait ABC
+case class A(a: Int) extends ABC
+case class B() extends ABC
+case class C() extends ABC
+
+Field[ABC](A(-1)).whenType[A](_.check(_.failMessage("A")))
+Field[ABC](A(-1)).whenType[A](_.sub(_.a) > 0)
+Field[ABC](A(-1)).whenType[B](_.check(_.failMessage("B")))
+Field[ABC](A(-1)).whenType[C](_.check(_.failMessage("B")))
 ```
 
 ## Boolean

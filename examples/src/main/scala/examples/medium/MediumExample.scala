@@ -58,8 +58,8 @@ object MediumExample extends zio.App {
     updateDate = PostDate(LocalDateTime.now.plusYears(5)),
     authorId = UserId(-5),
     paragraphs = Map(
-      ""  -> ParagraphContent.Link(""),
-      "a" -> ParagraphContent.Text(List.fill(51)(".").mkString("")),
+      ""  -> Link(""),
+      "a" -> Text(List.fill(51)(".").mkString("")),
     ),
   )
 

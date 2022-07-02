@@ -51,7 +51,7 @@ final case class FieldPath(private val parts: List[String]) extends AnyVal {
 object FieldPath {
 
   /** Name of the FieldPath that has empty `parts` */
-  val RootName = "root"
+  val RootName = "."
 
   /** Root FieldPath */
   val Root = FieldPath()

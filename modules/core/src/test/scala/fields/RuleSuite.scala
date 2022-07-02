@@ -10,6 +10,30 @@ class RuleSuite extends munit.FunSuite {
     assertEquals(actualRule, expectedRule)
   }
 
+  test("Rule.whenType") {
+    sealed trait TF
+    case object IzumiBio extends TF
+    case object Tofu     extends TF
+    case object Cats     extends TF
+
+    List(
+      Field[TF](Tofu),
+      Field[TF](Cats),
+      Field[TF](IzumiBio),
+    ).foreach { field =>
+      val rule = {
+        field.whenType[Tofu.type](_.check(_.failMessage(Tofu.toString))) &&
+        field.whenType[Cats.type](_.check(_.failMessage(Cats.toString))) &&
+        field.whenType[IzumiBio.type](_.check(_.failMessage(IzumiBio.toString)))
+      }
+
+      assertEquals(
+        rule.errors,
+        List(field.messageError(field.value.toString)),
+      )
+    }
+  }
+
   test("is Distinct By") {
     case class Good(id: UUID)
     case class Cart(goods: List[Good])

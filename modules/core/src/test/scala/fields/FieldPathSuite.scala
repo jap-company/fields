@@ -2,7 +2,7 @@ package jap.fields
 
 class FieldPathSuite extends munit.FunSuite {
   test("FieldPath.name") {
-    assertEquals(FieldPath.Root.name, "root")
+    assertEquals(FieldPath.Root.name, ".")
     assertEquals(FieldPath("1", "2", "3").name, "3")
   }
 
@@ -11,7 +11,7 @@ class FieldPathSuite extends munit.FunSuite {
   }
 
   List(
-    FieldPath.Root           -> "root",
+    FieldPath.Root           -> ".",
     FieldPath("1", "2", "3") -> "1.2.3",
   ).foreach { case (field, expected) =>
     test(s"FieldPath.full/toString - $expected") {

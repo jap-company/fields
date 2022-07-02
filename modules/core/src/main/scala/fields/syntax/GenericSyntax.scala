@@ -54,6 +54,7 @@ final class FieldOps[P, F[_], V[_], E](private val field: Field[P]) extends AnyV
       V: Validated[V],
   ): Rule[F, V, E] = Rule.whenF(test(field.value))(rule(field))
 
+  /** Runs rule for subtype `PP` else is valid */
   def whenType[PP <: P](rule: Field[PP] => Rule[F, V, E])(implicit
       F: Effect[F],
       V: Validated[V],

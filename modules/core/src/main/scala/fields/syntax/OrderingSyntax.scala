@@ -20,7 +20,7 @@ package syntax
 import typeclass._
 import fail._
 
-trait ModuleOrderingSyntax[F[_], V[_], E] { M: ValidationModule[F, V, E] =>
+trait ModuleOrderingSyntax[F[_], V[_], E] {
   implicit final def toOrderingFieldOps[P](field: Field[P]): OrderingFieldOps[P, F, V, E] =
     new OrderingFieldOps(field)
 }

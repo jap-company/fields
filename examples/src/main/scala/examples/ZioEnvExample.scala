@@ -18,14 +18,10 @@ package jap.fields
 package examples
 package zioenv
 
-import jap.fields.ZioInterop._
 import jap.fields._
-import jap.fields.data.Accumulate
-import jap.fields.error.ValidationError
-import jap.fields.fail.CanFailWithValidationError
 import jap.fields.syntax._
-import jap.fields.typeclass.Effect
 import zio._
+import jap.fields.error.ValidationError
 
 trait HeartbeatApi {
   def isHeartbeatOk(heartbeat: Int): Task[Boolean]
@@ -40,30 +36,36 @@ case class HealthReport(
     bloodPressure: Int,
 )
 
-object Validation extends all with ZioSyntaxAll with CanFailWithValidationError {
-  type ZRule[R]      = Rule[RIO[R, *], Accumulate, ValidationError]
-  type ZPolicy[R, P] = ValidationPolicy[P, RIO[R, *], Accumulate, ValidationError]
-  object ZPolicy {
-    def builder[R, P]: ValidationPolicyBuilder[P, RIO[R, *], Accumulate, ValidationError] = ValidationPolicy.builder
-  }
+/** In this example we focus on using ZIO environment for validation, so we define custom syntax module where Rule and
+  * Policy can specify R environment
+  */
+object Validation      {
+  import jap.fields.data.Accumulate
+  import jap.fields.error.ValidationError
+  import jap.fields.fail.CanFailWithValidationError
+  import jap.fields.ZIOInterop._
+  object all extends ZValidationModule[Accumulate, ValidationError] with CanFailWithValidationError
 }
-import Validation._
+import Validation.all._
 
 object HealthReport {
-  def validateHeartbeat(heartbeat: Field[Int]): ZRule[Has[HeartbeatApi]] =
+
+  /** Notice in env we say only what is needed for this validation */
+  def validateHeartbeat(heartbeat: Field[Int]): RIORule[Has[HeartbeatApi]] =
     heartbeat.ensureF(
       h => ZIO.serviceWith[HeartbeatApi](_.isHeartbeatOk(h)),
       _.failMessage("Check your heartbeat please"),
     )
 
-  def validateBloodPressure(bloodPressure: Field[Int]): ZRule[Has[BloodPressureApi]] =
+  /** Notice in env we say only what is needed for this validation */
+  def validateBloodPressure(bloodPressure: Field[Int]): RIORule[Has[BloodPressureApi]] =
     bloodPressure.ensureF(
       h => ZIO.serviceWith[BloodPressureApi](_.isBloodPressureOk(h)),
       _.failMessage("Check your bloodpressure please"),
     )
 
-  implicit val policy: ZPolicy[Has[BloodPressureApi] with Has[HeartbeatApi], HealthReport] =
-    ZPolicy
+  implicit val policy: RIOPolicy[Has[BloodPressureApi] with Has[HeartbeatApi], HealthReport] =
+    RIOPolicy
       .builder[Has[BloodPressureApi] with Has[HeartbeatApi], HealthReport]
       .subRule(_.heartbeat)(validateHeartbeat)
       .subRule(_.bloodPressure)(validateBloodPressure)

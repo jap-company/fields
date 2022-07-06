@@ -53,13 +53,7 @@ object DefaultFailFastVM extends DefaultFailFastVM
 abstract class ValidationModule[F[_], V[_], E](implicit
     val F: Effect[F],
     val V: Validated[V],
-) extends ModuleGenericSyntax[F, V, E]
-    with ModuleBooleanSyntax[F, V, E]
-    with ModuleOrderingSyntax[F, V, E]
-    with ModuleOptionSyntax[F, V, E]
-    with ModuleStringSyntax[F, V, E]
-    with ModuleMapSyntax[F, V, E]
-    with ModuleIterableSyntax[F, V, E]
+) extends ModuleAllSyntax[F, V, E]
     with RuleSyntax
     with PolicySyntax
     with FieldSyntax
@@ -103,6 +97,9 @@ abstract class ValidationModule[F[_], V[_], E](implicit
 
     /** See [[Rule.effect]] */
     def effect(effect: => F[V[E]]): MRule = Rule.effect(effect)
+
+    /** See [[Rule.flatten]] */
+    def flatten(rule: => F[Rule[F, V, E]]): MRule = Rule.flatten(rule)
 
     /** See [[Rule.defer]] */
     def defer(rule: => MRule): MRule = Rule.defer(rule)

@@ -19,7 +19,7 @@ package syntax
 
 import typeclass._
 
-trait ModuleMapSyntax[F[_], V[_], E] { M: ValidationModule[F, V, E] =>
+trait ModuleMapSyntax[F[_], V[_], E] {
   implicit final def toMapFieldOps[K, P](field: Field[Map[K, P]]): MapFieldOps[K, P, F, V, E] =
     new MapFieldOps(field)
 }

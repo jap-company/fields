@@ -20,7 +20,7 @@ package i18n
 
 import cats.conversions.variance
 import jap.fields.FieldPathConversions.*
-import jap.fields.ZioInterop.*
+import jap.fields.ZIOInterop.*
 import jap.fields.*
 import jap.fields.error.*
 import jap.fields.fail.*

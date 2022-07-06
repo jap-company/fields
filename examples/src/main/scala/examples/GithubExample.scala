@@ -26,7 +26,7 @@ import zio.console._
 object Validation {
   import jap.fields.error._
   import jap.fields.fail._
-  import jap.fields.ZioInterop._
+  import jap.fields.ZIOInterop._
   object all extends AccumulateVM[Task, ValidationError] with CanFailWithValidationError
 }
 import Validation.all.*

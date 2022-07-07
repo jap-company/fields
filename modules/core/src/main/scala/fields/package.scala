@@ -22,4 +22,7 @@ package object fields {
     * for Rule. Also we get ability to convert back and forth.
     */
   type Rule[+F[_], +V[_], +E] <: Rule.Type[F, V, E]
+
+  /** Contains path parts of the Field */
+  type FieldPath <: FieldPath.Type
 }

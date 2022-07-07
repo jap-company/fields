@@ -16,7 +16,7 @@ class FieldPathSuite extends munit.FunSuite {
   ).foreach { case (field, expected) =>
     test(s"FieldPath.full/toString - $expected") {
       assertEquals(field.full, expected)
-      assertEquals(field.toString, expected)
+      assertEquals(field.toString, expected.split('.').toList.toString)
     }
   }
 

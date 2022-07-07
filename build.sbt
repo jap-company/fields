@@ -194,3 +194,10 @@ ThisBuild / githubWorkflowPublish               := Seq(
     ),
   )
 )
+
+def addCommandsAlias(name: String, commands: List[String]) = addCommandAlias(name, commands.mkString(";", ";", ""))
+
+addCommandsAlias(
+  "ci",
+  List("clean", "test", "scalafmtCheck", "scalafmtSbtCheck", "headerCheck", "doc"),
+)

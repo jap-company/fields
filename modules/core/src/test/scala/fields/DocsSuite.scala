@@ -29,7 +29,7 @@ class DocsSuite extends munit.FunSuite {
     import jap.fields._
     import jap.fields.fail._
     import jap.fields.error._
-    object VM extends DefaultAccumulateVM {
+    object Validation extends DefaultAccumulateVM {
       implicit object IntFailWith
           extends FailWithInvalid[ValidationError, Int]
           with FailWithEmpty[ValidationError, Int] {
@@ -37,7 +37,7 @@ class DocsSuite extends munit.FunSuite {
         def empty[P >: Int](field: Field[P]): ValidationError   = ValidationError.Message(field.path, "Empty int")
       }
     }
-    import VM._
+    import Validation._
 
     val intF    = Field(1)
     val stringF = Field("1")

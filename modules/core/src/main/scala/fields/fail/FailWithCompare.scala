@@ -20,7 +20,7 @@ package fail
 import scala.annotation.implicitNotFound
 
 import typeclass.FieldCompare
-import error.ValidationTypes
+import error._
 
 @implicitNotFound("To use this operation you need to have FailWithCompare[${E}] in scope")
 trait FailWithCompare[E, +P] {
@@ -59,6 +59,15 @@ sealed trait CompareOperation {
     case CompareOperation.GreaterEqual => ValidationTypes.GreaterEqual
     case CompareOperation.Less         => ValidationTypes.Less
     case CompareOperation.LessEqual    => ValidationTypes.LessEqual
+  }
+
+  def message(compared: String) = this match {
+    case CompareOperation.Equal        => ValidationMessages.Equal(compared)
+    case CompareOperation.NotEqual     => ValidationMessages.NotEqual(compared)
+    case CompareOperation.Greater      => ValidationMessages.Greater(compared)
+    case CompareOperation.GreaterEqual => ValidationMessages.GreaterEqual(compared)
+    case CompareOperation.Less         => ValidationMessages.Less(compared)
+    case CompareOperation.LessEqual    => ValidationMessages.LessEqual(compared)
   }
 }
 object CompareOperation       {

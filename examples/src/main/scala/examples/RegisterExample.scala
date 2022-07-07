@@ -18,14 +18,10 @@ package jap.fields
 package examples
 package register
 
-import cats._
 import jap.fields._
-import zio._
 
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 object Validation {
   import jap.fields.typeclass.Effect.future._
@@ -134,6 +130,6 @@ object RegisterExample {
         age = 2,
       )
 
-    awaitFuture(showErrors("ERRORS")(Field.from(request).validate))
+    awaitReady(showErrors("ERRORS")(Field.from(request).validate))
   }
 }

@@ -19,9 +19,7 @@ package examples
 package zioenv
 
 import jap.fields._
-import jap.fields.syntax._
 import zio._
-import jap.fields.error.ValidationError
 
 trait HeartbeatApi {
   def isHeartbeatOk(heartbeat: Int): Task[Boolean]

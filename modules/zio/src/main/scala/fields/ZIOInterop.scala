@@ -20,54 +20,52 @@ import zio._
 
 import typeclass._
 
-object ZIOInterop {
+trait ZIOEffectInstances {
+  private[this] val effectInstance0: ZIOEffect[Any, Nothing] = new ZIOEffect[Any, Nothing]
 
   /** [[jap.fields.typeclass.Effect]] instance for `zio.ZIO` */
-  implicit def zioEffectInstance[R, E]: Effect[ZIO[R, E, _]] = effectInstance0.asInstanceOf[Effect[ZIO[R, E, _]]]
+  implicit def zioEffect[R, E]: Effect[ZIO[R, E, _]] = effectInstance0.asInstanceOf[Effect[ZIO[R, E, _]]]
+}
 
-  private[this] val effectInstance0: ZIOEffect[Any, Nothing] = new ZIOEffect[Any, Nothing]
-  private class ZIOEffect[R, E] extends Effect[ZIO[R, E, _]] {
-    type F[A] = ZIO[R, E, A]
-    def pure[A](a: A): F[A]                         = UIO(a)
-    def suspend[A](a: => A): F[A]                   = UIO(a)
-    def defer[A](a: => F[A]): F[A]                  = ZIO.effectSuspendTotal(a)
-    def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] = fa.flatMap(f)
-    def map[A, B](fa: F[A])(f: A => B): F[B]        = fa.map(f)
-  }
+object ZIOInterop extends ZIOEffectInstances {
 
   /** ValidationModule with helpful stuff for ZIO */
-  abstract class ZValidationModule[V[_], E](implicit val V: Validated[V]) extends syntax.all with ZIOSyntaxAll {
-    implicit def effectInstance[ZR, ZE]: Effect[ZIO[ZR, ZE, _]] = zioEffectInstance
+  abstract class ZValidationModule[V[_], E](implicit val V: Validated[V])
+      extends syntax.all
+      with ZIOSyntaxAll
+      with ZIOEffectInstances {
 
-    type ZIORule[ZR, ZE]             = Rule[ZIO[ZR, ZE, *], V, E]
+    type ZIORule[-ZR, +ZE]           = Rule[ZIO[ZR, ZE, *], V, E]
     type ZIOPolicy[ZR, ZE, P]        = ValidationPolicy[P, ZIO[ZR, ZE, *], V, E]
     type ZIOPolicyBuilder[ZR, ZE, P] = ValidationPolicyBuilder[P, ZIO[ZR, ZE, *], V, E]
-    object ZIOPolicy { def builder[ZR, ZE, P]: ZIOPolicyBuilder[ZR, ZE, P] = ValidationPolicy.builder }
+    object ZIOPolicy {
+      def builder[ZR, ZE, P]: ZIOPolicyBuilder[ZR, ZE, P] = ValidationPolicy.builder[P, ZIO[ZR, ZE, *], V, E]
+    }
 
-    type RIORule[ZR]             = ZIORule[ZR, Throwable]
+    type RIORule[-ZR]            = ZIORule[ZR, Throwable]
     type RIOPolicy[ZR, P]        = ZIOPolicy[ZR, Throwable, P]
     type RIOPolicyBuilder[ZR, P] = ZIOPolicyBuilder[ZR, Throwable, P]
-    object RIOPolicy { def builder[ZR, P]: RIOPolicyBuilder[ZR, P] = ValidationPolicy.builder }
+    object RIOPolicy { def builder[ZR, P]: RIOPolicyBuilder[ZR, P] = ValidationPolicy.builder[P, RIO[ZR, *], V, E] }
 
-    type IORule[E]             = ZIORule[Any, E]
-    type IOPolicy[E, P]        = ZIOPolicy[Any, E, P]
-    type IOPolicyBuilder[E, P] = ZIOPolicyBuilder[Any, E, P]
-    object IOPolicy { def builder[E, P]: IOPolicyBuilder[E, P] = ValidationPolicy.builder }
+    type IORule[+ZE]            = ZIORule[Any, ZE]
+    type IOPolicy[ZE, P]        = ZIOPolicy[Any, ZE, P]
+    type IOPolicyBuilder[ZE, P] = ZIOPolicyBuilder[Any, ZE, P]
+    object IOPolicy { def builder[ZE, P]: IOPolicyBuilder[ZE, P] = ValidationPolicy.builder[P, IO[ZE, *], V, E] }
 
     type TaskRule             = ZIORule[Any, Throwable]
     type TaskPolicy[P]        = ZIOPolicy[Any, Throwable, P]
     type TaskPolicyBuilder[P] = ZIOPolicyBuilder[Any, Throwable, P]
-    object TaskPolicy { def builder[P]: TaskPolicyBuilder[P] = ValidationPolicy.builder }
+    object TaskPolicy { def builder[P]: TaskPolicyBuilder[P] = ValidationPolicy.builder[P, Task, V, E] }
 
     type UIORule             = ZIORule[Any, Nothing]
     type UIOPolicy[P]        = ZIOPolicy[Any, Nothing, P]
     type UIOPolicyBuilder[P] = ZIOPolicyBuilder[Any, Nothing, P]
-    object UIOPolicy { def builder[P]: UIOPolicyBuilder[P] = ValidationPolicy.builder }
+    object UIOPolicy { def builder[P]: UIOPolicyBuilder[P] = ValidationPolicy.builder[P, UIO, V, E] }
 
-    type URIORule[R]             = ZIORule[R, Nothing]
-    type URIOPolicy[R, P]        = ZIOPolicy[R, Nothing, P]
-    type URIOPolicyBuilder[R, P] = ZIOPolicyBuilder[R, Nothing, P]
-    object URIOPolicy { def builder[R, P]: URIOPolicyBuilder[R, P] = ValidationPolicy.builder }
+    type URIORule[-ZR]            = ZIORule[ZR, Nothing]
+    type URIOPolicy[ZR, P]        = ZIOPolicy[ZR, Nothing, P]
+    type URIOPolicyBuilder[ZR, P] = ZIOPolicyBuilder[ZR, Nothing, P]
+    object URIOPolicy { def builder[ZR, P]: URIOPolicyBuilder[ZR, P] = ValidationPolicy.builder[P, URIO[ZR, *], V, E] }
   }
 
   object ZIOSyntaxAll extends ZIOSyntaxAll

@@ -21,7 +21,6 @@ package github
 import jap.fields._
 
 import zio._
-import zio.console._
 
 object Validation {
   import jap.fields.error._
@@ -49,7 +48,7 @@ object AddStarCmd {
       .build
 
   /** Extracted for convenience */
-  def checkNotStarredRule(userF: Field[String])(project: Project) =
+  def checkNotStarredRule(userF: Field[String])(project: Project): MRule =
     userF.ensure(
       !project.stargazers.contains(_),
       _.failMessage("user-already-starred-project"),
@@ -68,10 +67,10 @@ object AddStarCmd {
     val projectDontExist = MRule.pure(V.traverse(organizationF, projectF)(_.failMessage("project-does-not-exist")))
 
     /** We use Rule.apply cause we sure this is lazy */
-    val projectRule = Rule {
+    val projectRule = Rule.flatten {
       api
         .findProject(organizationF.value, projectF.value)
-        .flatMap(_.fold(projectDontExist)(checkNotStarredRule(userF)).effect)
+        .map(_.fold(projectDontExist)(checkNotStarredRule(userF)))
     }
 
     cmdF.validate &&                        // Call validate to use base validations

@@ -26,7 +26,7 @@ trait BooleanSyntax {
     new BooleanFieldOps(field)
 }
 
-trait ModuleBooleanSyntax[F[_], V[_], E] { self: ValidationModule[F, V, E] =>
+trait ModuleBooleanSyntax[F[_], V[_], E] {
   implicit final def toBooleanFieldOps(field: Field[Boolean]): BooleanFieldOps[F, V, E] =
     new BooleanFieldOps(field)
 }

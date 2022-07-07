@@ -21,8 +21,11 @@ import jap.fields.typeclass._
 
 import scala.concurrent._
 import scala.concurrent.duration._
+import java.time.LocalDateTime
 
 package object examples {
+  implicit val localDateTimeOrdering: Ordering[LocalDateTime] = _ compareTo _
+
   def showTitle(name: String, size: Int = 40, symbol: String = "-") = {
     val toFill = (size - name.size) / 2.0
     val before = symbol * Math.ceil(toFill).toInt
@@ -30,14 +33,18 @@ package object examples {
     println(before + name + after)
   }
 
-  def showErrors[F[_]: Effect, V[_]: Validated: HasErrors, E](title: String)(rule: Rule[F, V, E]): F[List[E]] =
+  def showErrors[F[_]: Effect, V[_]: HasErrors, E](title: String)(rule: Rule[F, V, E]): F[Unit] =
     Effect[F].map(rule.errors) { errors =>
       showTitle(title)
       println(errors.mkString("\n"))
-      errors
+      ()
     }
 
-  def awaitFuture[T](f: Future[T]): T = Await.result(f, Duration.Inf)
+  def awaitResult[T](f: Future[T]): T   = Await.result(f, Duration.Inf)
+  def awaitReady[T](f: Future[T]): Unit = {
+    Await.ready(f, Duration.Inf)
+    ()
+  }
 
   def showBuildInfo() = {
     showTitle("BUILD-INFO")

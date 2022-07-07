@@ -20,12 +20,13 @@ package syntax
 import typeclass._
 import fail._
 
-trait ModuleOptionSyntax[F[_], V[_], E] { M: ValidationModule[F, V, E] =>
+trait ModuleOptionSyntax[F[_], V[_], E] {
   implicit final def toOptionFieldOps[P](field: Field[Option[P]]): OptionFieldOps[P, F, V, E] =
     new OptionFieldOps(field)
 
   /** Unpacks `rule` from `Option` if `None` returns valid */
-  def someOrValid(rule: => Option[Rule[F, V, E]]): Rule[F, V, E] = OptionSyntax.someOrValid(rule)
+  def someOrValid(rule: => Option[Rule[F, V, E]])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+    OptionSyntax.someOrValid(rule)
 }
 
 object OptionSyntax extends OptionSyntax

@@ -19,9 +19,9 @@ package fail
 
 import error.FieldError
 
-trait CanFailWithFieldValidationTypeString {
-  implicit def failWith: FailWith.Base[FieldError[String]] = FailWithFieldValidationTypeString
+trait CanFailWithValidationTypeFieldString {
+  implicit def failWith: FailWith.Base[FieldError[String]] = FailWithValidationTypeFieldString
 }
 
 /** FailWithValidationType wrapper with [[jap.fields.error.FieldError]] in */
-object FailWithFieldValidationTypeString extends FailWithFieldError[String, Nothing](FailWithValidationTypeString)
+object FailWithValidationTypeFieldString extends FailWithFieldError[String, Nothing](FailWithValidationTypeString)

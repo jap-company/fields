@@ -18,14 +18,10 @@ package jap.fields
 package examples
 package register
 
-import cats._
 import jap.fields._
-import zio._
 
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 object Validation {
   import jap.fields.typeclass.Effect.future._
@@ -33,7 +29,7 @@ object Validation {
   import jap.fields.error._
   // Try changing Module delclaration to see how easy it is to swap Error type
   // object all extends AccumulateVM[Future, ValidationError] with CanFailWithValidationError
-  object all extends AccumulateVM[Future, FieldError[String]] with CanFailWithFieldStringValidationMessage
+  object all extends AccumulateVM[Future, FieldError[String]] with CanFailWithValidationMessageFieldString
   // object all extends AccumulateVM[Future, ValidationMessage] with CanFailWithValidationMessage
 }
 import Validation.all._
@@ -56,25 +52,51 @@ case class RegisterRequest(
 )
 
 object RegisterRequest {
-  implicit val policy: Policy[RegisterRequest] = Policy
+
+  def validateUsername(username: Field[Username]): MRule = {
+    val usernameS = username.map(_.value)
+    usernameS.minSize(1) && usernameS.maxSize(10)
+  }
+
+  implicit val basicPolicy: Policy[RegisterRequest] = Policy
     .builder[RegisterRequest]
-    .fieldRule(_.sub(_.username).map(_.value))(
-      _.minSize(1),
-      _.maxSize(10),
-    )
     .subRule(_.age)(_ >= 18, _ <= 110)
     .subRule(_.email)(_.map(_.value).matchesRegex(Email.EmailRegex))
     .subRule(_.password)(_.nonEmpty, _.minSize(4), _.maxSize(100))
     .subRule(_.password, _.passwordRepeat)(_ equalTo _)
+    // Commented code is the same rule rewritten in 4 different ways
+    // .fieldRule(_.sub(_.username).map(_.value))(_.minSize(1), _.maxSize(10))
+    // .subRule(_.username)(_.map(_.value).all(_.minSize(1), _.maxSize(10)))
+    // .subRule(_.username)(validateUsername)
+    .rule { request =>
+      val username = request.sub(_.username).map(_.value)
+      username.minSize(1) && username.maxSize(10)
+    }
     .build
 
-  def policy(userService: UserService): Policy[RegisterRequest] =
+  /** You could extract some complex validation logic to methods, they could even be Tagless Final if you wish to reuse
+    * it with different Effect, Validated, Error types
+    */
+  def validateNoActiveUser(username: Field[Username])(implicit userService: UserService) =
+    Rule.flatten {
+      userService.getUser(username.value).map {
+        case Some(user) if user.active => Rule.pure(username.failMessage("Already used by active user"))
+        case _                         => Rule.valid
+      }
+    }
+
+  def asyncPolicy(implicit userService: UserService): Policy[RegisterRequest] =
     Policy
       .builder[RegisterRequest]
-      // Include Sync validation
-      .rule(RegisterRequest.policy.validate)
-      // Async validations
-      .subRule(_.username)(_.ensureF(userService.usernameIsAvailable, _.failMessage("Username is not available")))
+      // Include Basic validation
+      .rule(RegisterRequest.basicPolicy.validate)
+      // Below will work to but keep in mind not to fall for cyclic implicit resolution
+      // .rule(_.validate)
+      // Our Async validations
+      .subRule(_.username)(
+        _.ensureF(userService.usernameIsAvailable, _.failMessage("Username is not available")),
+        validateNoActiveUser,
+      )
       .subRule(_.email)(_.ensureF(userService.emailIsAvailable, _.failMessage("Email is not available")))
       .build
 }
@@ -82,16 +104,20 @@ object RegisterRequest {
 trait UserService {
   def emailIsAvailable(email: Email): Future[Boolean]
   def usernameIsAvailable(username: Username): Future[Boolean]
+  def getUser(username: Username): Future[Option[User]]
 }
+
+case class User(usermame: Username, active: Boolean)
 
 object RegisterExample {
   showBuildInfo()
-  val userService: UserService = new UserService {
-    def emailIsAvailable(email: Email)          = Future(false)
-    def usernameIsAvailable(username: Username) = Future(false)
+  implicit val userService: UserService = new UserService {
+    def emailIsAvailable(email: Email)                    = Future(false)
+    def usernameIsAvailable(username: Username)           = Future(false)
+    def getUser(username: Username): Future[Option[User]] = Future(Some(User(username, true)))
   }
 
-  implicit val policy: Policy[RegisterRequest] = RegisterRequest.policy(userService)
+  implicit val policy: Policy[RegisterRequest] = RegisterRequest.asyncPolicy
 
   final def main(args: Array[String]): Unit = {
 
@@ -104,6 +130,6 @@ object RegisterExample {
         age = 2,
       )
 
-    awaitFuture(showErrors("ERRORS")(Field.from(request).validate))
+    awaitReady(showErrors("ERRORS")(Field.from(request).validate))
   }
 }

@@ -20,7 +20,8 @@ Fields is a Scala validation library that you should use because it is:
 # Teaser
 
 ```scala
-implicit def policy(implicit tokenService: TokenService, userService: UserService): Policy[RegisterRequest] = Policy
+// Here we pass validation dependencies using implicits, but you could be doing this the way you prefer
+def policy(implicit tokenService: TokenService, userService: UserService): Policy[RegisterRequest] = Policy
   .builder[RegisterRequest]
   .subRule(_.age)(_ >= 18, _ <= 110)
   .subRule(_.email)(_.map(_.value).matchesRegex(EmailRegex))
@@ -30,18 +31,16 @@ implicit def policy(implicit tokenService: TokenService, userService: UserServic
   .subRule(_.token)(_.ensureF(tokenService.validateToken, _.failMessage("invalid-token")))
   .build
 
-def validateUsername(username: Field[String])(implicit userService: UserService): Rule[zio.Task, Accumulate, ValidationError] =
+// Extract complex validations to reusable methods.
+def validateUsername(username: Field[String])(implicit userService: UserService): MRule =
     username.minSize(1) &&
     username.maxSize(10) &&
-    Rule {
-      userService.findByUsername(usernameF.value).flatMap { (user: Option[User]) =>
-        user match {
-          case Some(_) => usernameF.failMessage("username-already-exists").effect
-          case None    => Rule.valid.effect
-        }
+    MRule.flatten {
+      userService.findByUsername(username.value).map {
+        case Some(_) => username.failMessage("username-already-exists")
+        case None    => MRule.valid
       }
     }
-
 ```
 
 ## Quicklinks

@@ -22,7 +22,7 @@ import scala.annotation.nowarn
 import typeclass._
 import fail._
 
-trait ModuleIterableSyntax[F[_], V[_], E] { self: ValidationModule[F, V, E] =>
+trait ModuleIterableSyntax[F[_], V[_], E] {
   implicit final def toIterableFieldOps[P, I[X] <: Iterable[X]](
       field: Field[I[P]]
   ): IterableFieldOps[P, I, F, V, E] =

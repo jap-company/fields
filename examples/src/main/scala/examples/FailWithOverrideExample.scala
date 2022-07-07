@@ -26,7 +26,6 @@ case class ERR(code: Int)
 
 object Validation {
   import jap.fields.fail._
-  import jap.fields.typeclass._
   import jap.fields.CatsInterop._
   trait ErrFailWithInstance {
     implicit object FailWithErr extends FailWith[ERR, Nothing] {

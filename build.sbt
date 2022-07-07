@@ -50,14 +50,14 @@ lazy val scalaSettings = Seq(
       case _            => Seq("-Xsource:3", "-P:kind-projector:underscore-placeholders")
     }
   },
-)
-
-lazy val commonSettings = Seq(
-  libraryDependencies += "org.scalameta" %% "munit" % V.MUnit % Test,
   libraryDependencies ++= (
     if (scalaVersion.value == V.Scala3) List()
     else List(compilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full))
   ),
+)
+
+lazy val commonSettings = Seq(
+  libraryDependencies += "org.scalameta" %% "munit" % V.MUnit % Test
 ) ++ scalaSettings
 
 lazy val `fields-core` =
@@ -98,7 +98,8 @@ lazy val `fields-zio` =
 lazy val examples =
   (project in file("examples"))
     .settings(
-      scalaVersion                           := editorScala,
+      scalaSettings,
+      crossScalaVersions                     := Nil,
       publishArtifact                        := false,
       libraryDependencies += "org.typelevel" %% "cats-effect" % "2.5.5",
     )

@@ -18,18 +18,15 @@ package jap.fields
 package examples
 package i18n
 
-import cats.conversions.variance
 import jap.fields.FieldPathConversions.*
-import jap.fields.ZioInterop.*
+import jap.fields.ZIOInterop.*
 import jap.fields.*
 import jap.fields.error.*
 import jap.fields.fail.*
-import jap.fields.typeclass.*
 import zio.*
 import zio.console.*
 
 import java.time.*
-import java.util.UUID
 
 /** Simple ADT that we will interpret to construct localised message */
 sealed trait TranslatedMessage
@@ -89,8 +86,8 @@ case class Post(
     created: LocalDateTime,
     modified: LocalDateTime,
 )
-object Post:
-  given Policy[Post] =
+object Post {
+  implicit val policy: Policy[Post] =
     Policy
       .builder[Post]
       .subRule(_.id)(
@@ -101,17 +98,23 @@ object Post:
       .subRule(_.description)(_.some(_.all(_.minSize(5), _.maxSize(10))))
       .subRule(_.created, _.modified)(_ <= _)
       .build
+}
 
 case class Blog(posts: List[Post], authorId: Long)
-object Blog:
-  given Policy[Blog] =
+object Blog {
+  implicit val policy: Policy[Blog] =
     Policy
       .builder[Blog]
       .subRule(_.authorId)(_ > 0L)
       .subRule(_.posts)(_.each(_.validate))
       .build
+}
 
-enum Locale { case EN, UA }
+sealed trait Locale
+object Locale {
+  case object EN extends Locale
+  case object UA extends Locale
+}
 
 final case class I18N(locales: Map[Locale, Map[String, String]]) {
   def apply(key: String)(locale: Locale): String = locales(locale)(key)
@@ -119,7 +122,7 @@ final case class I18N(locales: Map[Locale, Map[String, String]]) {
   def translateAll(locale: Locale)(errors: List[TranslatedError]): Task[List[ValidationError.Message]] =
     Task.collectAll(errors.map(translate(locale)))
 
-  def translate(locale: Locale)(error: TranslatedError): Task[ValidationError.Message] =
+  def translate(locale: Locale)(error: TranslatedError): Task[ValidationError.Message] = {
     def translateMessage(msg: TranslatedMessage): String =
       msg match {
         case TranslatedMessage.Key(key)        => apply(key)(locale)
@@ -134,6 +137,8 @@ final case class I18N(locales: Map[Locale, Map[String, String]]) {
         message = translateMessage(error.message),
       )
     )
+  }
+
 }
 
 object I18NExample extends zio.App {

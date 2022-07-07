@@ -21,7 +21,7 @@ import typeclass._
 import fail._
 import scala.reflect.ClassTag
 
-trait ModuleGenericSyntax[F[_], V[_], E] { M: ValidationModule[F, V, E] =>
+trait ModuleGenericSyntax[F[_], V[_], E] {
   implicit final def toFieldOps[P](field: Field[P]): FieldOps[P, F, V, E] =
     new FieldOps(field)
 }

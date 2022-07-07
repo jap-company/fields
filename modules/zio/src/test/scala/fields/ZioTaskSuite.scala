@@ -1,6 +1,6 @@
 package jap.fields
 
-import jap.fields.fail._
+import jap.fields.error.ValidationError.MinSize
 import zio._
 import zio.test.Assertion._
 import zio.test._
@@ -8,14 +8,14 @@ import zio.test._
 import scala.collection.mutable.ListBuffer
 
 import FieldPathConversions._
-import error._
-import error.ValidationError._
-import ZioInterop._
-
-object TaskValidationModule extends FailFastVM[Task, ValidationError] with CanFailWithValidationError
-import TaskValidationModule._
 
 object ZioTaskSuite extends DefaultRunnableSpec {
+  object Validation {
+    import jap.fields.ZIOInterop._
+    object all extends FailFastVM[Task, error.ValidationError] with fail.CanFailWithValidationError
+  }
+  import Validation.all._
+
   def init[A](path: FieldPath)(a: A)(implicit inited: ListBuffer[FieldPath]): A = {
     inited.append(path)
     a

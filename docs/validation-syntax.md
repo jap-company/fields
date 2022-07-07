@@ -119,7 +119,7 @@ mapF.anyValue(_ > 4)
 
 ```scala mdoc:reset:width=100
 import jap.fields._
-import jap.fields.ZioInterop._
+import jap.fields.ZIOInterop._
 import jap.fields.fail._
 import jap.fields.error._
 import zio._

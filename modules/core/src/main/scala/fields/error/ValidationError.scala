@@ -22,10 +22,10 @@ sealed trait ValidationError {
   def path: FieldPath
   def error: String
   def message: Option[String]
-  override def toString = s"$path -> ${message.getOrElse(error)}"
+  override def toString = s"${path.full} -> ${message.getOrElse(error)}"
 }
 
-object ValidationError    {
+object ValidationError {
   case class Invalid(path: FieldPath)  extends ValidationError {
     val error   = ValidationTypes.Invalid
     val message = Some(ValidationMessages.Invalid)
@@ -95,36 +95,4 @@ object ValidationError    {
   object Message {
     def apply(path: FieldPath, error: String, message: String): Message = Message(path, error, Some(message))
   }
-}
-
-/** This corresponds to `error` field of ValidationError with given names */
-object ValidationTypes    {
-  val Invalid      = "INVALID_ERROR"
-  val Empty        = "EMPTY_ERROR"
-  val NonEmpty     = "NON_EMPTY_ERROR"
-  val Greater      = "GREATER_ERROR"
-  val GreaterEqual = "GREATER_EQUAL_ERROR"
-  val Less         = "LESS_ERROR"
-  val LessEqual    = "LESS_EQUAL_ERROR"
-  val Equal        = "EQUAL_ERROR"
-  val NotEqual     = "NOT_EQUAL_ERROR"
-  val MinSize      = "MIN_SIZE_ERROR"
-  val MaxSize      = "MAX_SIZE_ERROR"
-  val OneOf        = "ONE_OF_ERROR"
-}
-
-/** ValidationError error messages */
-object ValidationMessages {
-  val Invalid                        = s"should be valid"
-  val NonEmpty                       = s"should not be empty"
-  val Empty                          = s"should be empty"
-  def Greater(compared: String)      = s"should be greater than $compared"
-  def GreaterEqual(compared: String) = s"should be greater than or equal to $compared"
-  def Less(compared: String)         = s"should be less than $compared"
-  def LessEqual(compared: String)    = s"should be less than or equal to $compared"
-  def Equal(compared: String)        = s"should be equal to $compared"
-  def NotEqual(compared: String)     = s"should not be equal to $compared"
-  def MinSize(size: Int)             = s"min size should be $size"
-  def MaxSize(size: Int)             = s"max size should be $size"
-  def OneOf(variants: Seq[String])   = s"should be one of ${variants.mkString(",")}"
 }

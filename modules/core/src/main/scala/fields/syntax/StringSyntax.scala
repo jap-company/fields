@@ -22,8 +22,9 @@ import scala.util.matching.Regex
 
 import typeclass._
 import fail._
+import jap.fields.error.{ValidationMessages => M, ValidationTypes => T}
 
-trait ModuleStringSyntax[F[_], V[_], E] { M: ValidationModule[F, V, E] =>
+trait ModuleStringSyntax[F[_], V[_], E] {
   implicit final def toStringFieldOps(field: Field[String]): StringFieldOps[F, V, E] = new StringFieldOps(field)
 }
 
@@ -39,13 +40,13 @@ final class StringFieldOps[F[_], V[_], E](private val field: Field[String]) exte
   def startsWith(
       value: => String
   )(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failMessage("starts-with", s"should start with $value"))(field.value.startsWith(value))
+    Rule.ensure(field.failMessage(T.StringStartsWith, M.StringStartsWith(value)))(field.value.startsWith(value))
 
   /** Validates that [[jap.fields.Field]]#value ends with `value` */
   def endsWith(
       value: => String
   )(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failMessage("ends-with", s"should end with $value"))(field.value.endsWith(value))
+    Rule.ensure(field.failMessage(T.StringEndsWith, M.StringEndsWith(value)))(field.value.endsWith(value))
 
   /** Validates that [[jap.fields.Field]]#value is not empty */
   def nonEmpty(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, String]): Rule[F, V, E] =
@@ -69,9 +70,7 @@ final class StringFieldOps[F[_], V[_], E](private val field: Field[String]) exte
 
   /** Validates that [[jap.fields.Field]]#value matches Regexp */
   def matches(r: => String)(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failMessage("match", s"${field.fullPath} should match $r")) {
-      field.value.matches(r)
-    }
+    Rule.ensure(field.failMessage(T.StringMatch, M.StringMatch(r)))(field.value.matches(r))
 
   /** Validates that [[jap.fields.Field]]#value is matches [[scala.util.matching.Regex]] */
   def matchesRegex(r: => Regex)(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =

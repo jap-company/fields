@@ -1,16 +1,23 @@
 package jap.fields
 
-import DefaultAccumulateVM._
+import jap.fields.error.ValidationError
+import jap.fields.fail.CanFailWithValidationError
+
 import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.Future
 
 class RuleSuite extends munit.FunSuite {
   test("Should be same after wrap/unwrap") {
+    import DefaultAccumulateVM._
+
     val expectedRule = Rule.pure(V.invalid(error.ValidationError.Invalid(FieldPath.Root)))
     val actualRule   = (0 to 1000).foldLeft(expectedRule)((r, _) => Rule.wrap(r.unwrap))
     assertEquals(actualRule, expectedRule)
   }
 
   test("Rule.whenType") {
+    import DefaultAccumulateVM._
     sealed trait TF
     case object IzumiBio extends TF
     case object Tofu     extends TF
@@ -35,6 +42,7 @@ class RuleSuite extends munit.FunSuite {
   }
 
   test("is Distinct By") {
+    import DefaultAccumulateVM._
     case class Good(id: UUID)
     case class Cart(goods: List[Good])
     object Cart {
@@ -60,5 +68,19 @@ class RuleSuite extends munit.FunSuite {
         cartF.sub(_.goods(2)).invalidError,
       ),
     )
+  }
+
+  test("Rule.flatten") {
+    import jap.fields.typeclass.Effect.future._
+    object Validation extends AccumulateVM[Future, ValidationError] with CanFailWithValidationError
+    import Validation._
+
+    val field = Field(2)
+    def rule  = MRule.pure(field.failMessage("flatten"))
+
+    for {
+      actual   <- Rule.flatten(Future.successful(rule)).effect
+      expected <- rule.effect
+    } yield assertEquals(actual, expected)
   }
 }

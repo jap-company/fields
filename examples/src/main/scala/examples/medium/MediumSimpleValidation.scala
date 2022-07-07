@@ -18,7 +18,7 @@ package jap.fields
 package examples
 package medium
 
-import jap.fields.ZioInterop._
+import jap.fields.ZIOInterop._
 import jap.fields._
 import jap.fields.data.Accumulate
 import jap.fields.error.ValidationError

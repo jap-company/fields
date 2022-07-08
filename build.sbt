@@ -176,7 +176,7 @@ ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(RefPredicate.StartsWith(Ref.Tag("v")))
 ThisBuild / githubWorkflowJavaVersions          := Seq(JavaSpec.temurin("8"))
 ThisBuild / githubWorkflowArtifactUpload        := false
-// ThisBuild / githubWorkflowScalaVersions         := List(editorScala)
+ThisBuild / githubWorkflowScalaVersions         := List(V.Scala3)
 ThisBuild / githubWorkflowBuild                 := Seq(
   WorkflowStep.Sbt(List("ci")),
   WorkflowStep.Sbt(List("fields-docs/mdoc"), cond = Some(s"matrix.scala == '$editorScala'")),

@@ -170,3 +170,34 @@ ThisBuild / latestVersion := {
 }
 
 Global / excludeLintKeys ++= Set(ThisBuild / idePackagePrefix)
+
+//Github Workflow
+ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
+ThisBuild / githubWorkflowPublishTargetBranches := Seq(RefPredicate.StartsWith(Ref.Tag("v")))
+ThisBuild / githubWorkflowJavaVersions          := Seq(JavaSpec.temurin("8"))
+ThisBuild / githubWorkflowArtifactUpload        := false
+ThisBuild / githubWorkflowScalaVersions         := List(V.Scala3)
+ThisBuild / githubWorkflowBuild                 := Seq(
+  WorkflowStep.Sbt(List("ci")),
+  WorkflowStep.Sbt(List("fields-docs/mdoc"), cond = Some(s"matrix.scala == '$editorScala'")),
+)
+
+ThisBuild / githubWorkflowPublish               := Seq(
+  WorkflowStep.Sbt(
+    List("ci-release", "fields-docs/docusaurusPublishGhpages"),
+    env = Map(
+      "GIT_DEPLOY_KEY"    -> "${{ secrets.GIT_DEPLOY_KEY }}",
+      "PGP_PASSPHRASE"    -> "${{ secrets.PGP_PASSPHRASE }}",
+      "PGP_SECRET"        -> "${{ secrets.PGP_SECRET }}",
+      "SONATYPE_PASSWORD" -> "${{ secrets.SONATYPE_PASSWORD }}",
+      "SONATYPE_USERNAME" -> "${{ secrets.SONATYPE_USERNAME }}",
+    ),
+  )
+)
+
+def addCommandsAlias(name: String, commands: List[String]) = addCommandAlias(name, commands.mkString(";", ";", ""))
+
+addCommandsAlias(
+  "ci",
+  List("clean", "test", "scalafmtCheck", "scalafmtSbtCheck", "headerCheck", "doc"),
+)

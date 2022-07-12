@@ -88,9 +88,8 @@ object RegisterRequest {
   def asyncPolicy(implicit userService: UserService): Policy[RegisterRequest] =
     Policy
       .builder[RegisterRequest]
-      // Include Basic validation
-      .rule(RegisterRequest.basicPolicy.validate)
       // Below will work to but keep in mind not to fall for cyclic implicit resolution
+      // .rule(RegisterRequest.basicPolicy)
       // .rule(_.validate)
       // Our Async validations
       .subRule(_.username)(
@@ -99,6 +98,7 @@ object RegisterRequest {
       )
       .subRule(_.email)(_.ensureF(userService.emailIsAvailable, _.failMessage("Email is not available")))
       .build
+      .and(RegisterRequest.basicPolicy)
 }
 
 trait UserService {

@@ -19,7 +19,7 @@ package jap.fields
 import typeclass._
 
 /** Typeclass that defines how to validate given field */
-trait ValidationPolicy[P, F[_], V[_], E] { self =>
+trait ValidationPolicy[P, F[_], V[_], E] extends (Field[P] => Rule[F, V, E]) { self =>
   def validate(field: Field[P]): Rule[F, V, E]
 
   def apply(field: Field[P]): Rule[F, V, E] = validate(field)
@@ -30,6 +30,12 @@ trait ValidationPolicy[P, F[_], V[_], E] { self =>
       if (V.isValid(v)) Right(field.value)
       else Left(E.errors(v))
     }
+
+  def and(other: ValidationPolicy[P, F, V, E])(implicit F: Effect[F], V: Validated[V]): ValidationPolicy[P, F, V, E] =
+    field => Rule.and(self(field), other(field))
+
+  def or(other: ValidationPolicy[P, F, V, E])(implicit F: Effect[F], V: Validated[V]): ValidationPolicy[P, F, V, E] =
+    field => Rule.or(self(field), other(field))
 }
 
 object ValidationPolicy {

@@ -39,7 +39,7 @@ case class PostValidationService(postRepo: PostRepo, userRepo: UserRepo) {
   implicit val policy: Policy[MediumPost] =
     Policy
       .builder[MediumPost]
-      .rule(MediumPost.policy.validate)
+      .rule(MediumPost.policy)
       .subRule(_.authorId)(_.ensureF(userRepo.userExists, failCode(33)))
       .subRule(_.postId)(_.ensureF(postRepo.postDoesNotExist, failCode(44)))
       .subRule(_.title)(_.ensureF(postRepo.titleExists(_).negate, failCode(55)))

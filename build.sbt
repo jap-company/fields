@@ -20,8 +20,8 @@ ThisBuild / developers             :=
   )
 
 lazy val V      = new {
-  val Cats     = "2.7.0"
-  val Zio      = "1.0.13"
+  val Cats     = "2.8.0"
+  val Zio      = "1.0.15"
   val Scala3   = "3.1.2"
   val Scala213 = "2.13.8"
   val Scala212 = "2.12.16"

@@ -16,6 +16,8 @@
 
 package jap.fields
 
+import FieldPath._
+
 /** [[jap.fields.Field]] is heart of the library and contains [[jap.fields.FieldPath]] and its value */
 final case class Field[+P](
     path: FieldPath,

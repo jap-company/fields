@@ -16,36 +16,21 @@
 
 package jap.fields
 
-/** [[jap.fields.FieldPath]] contains path parts of the Field. */
-final case class FieldPath(private val parts: List[String]) extends AnyVal {
-
-  /** Accessor to parts */
-  def toList: List[String] = parts
-
-  /** Is current path root. */
-  def isRoot: Boolean = parts.isEmpty
-
-  /** Full name of the path is dot-separated parts of this path. For root path this will be "."
-    */
-  def full: String = if (isRoot) FieldPath.RootName else parts.mkString(".")
-
-  /** Name of the path is the last part of path.
-    */
-  def name: String = parts.lastOption.getOrElse(FieldPath.RootName)
-
-  /** Changes name of this path */
-  def named(name: String): FieldPath = FieldPath(parts.dropRight(1) :+ name)
-
-  /** Append other [[jap.fields.FieldPath]] to current path */
-  def ++(path: FieldPath): FieldPath = FieldPath(parts ++ path.parts)
-
-  /** Append other path part to current path */
-  def +(path: String): FieldPath = FieldPath(parts :+ path)
-
-  override def toString: String = full
-}
-
 object FieldPath {
+  // ----TAGGED---- //
+  trait Tag extends Any
+  type Base = Any { type __FieldPath__ }
+  type Type <: Base with Tag
+
+  /** Same as [[FieldPath.wrap]] */
+  @inline def apply(parts: List[String]): FieldPath = wrap(parts)
+
+  /** Wraps `parts` into tagged type */
+  @inline def wrap(parts: List[String]): FieldPath = parts.asInstanceOf[FieldPath]
+
+  /** Unwraps `path` from tagged type */
+  @inline def unwrap(path: FieldPath): List[String] = path.asInstanceOf[List[String]]
+  // ----TAGGED---- //
 
   /** Name of the FieldPath that has empty `parts` */
   val RootName = "."
@@ -66,7 +51,38 @@ object FieldPath {
   def fromList(path: List[String]): FieldPath = FieldPath(path)
 
   /** Create [[jap.fields.FieldPath]] from [[jap.fields.Field]] */
-  def fromField[P](f: Field[P]): FieldPath = f.path
+  def fromField[P](f: Field[P]): FieldPath = f.path.asInstanceOf[FieldPath]
+
+  implicit final class FieldPathOps(private val path: FieldPath) extends AnyVal {
+
+    /** Converts to List of parts */
+    def unwrap: List[String] = FieldPath.unwrap(path)
+
+    /** Converts to List of parts */
+    def parts: List[String] = FieldPath.unwrap(path)
+
+    /** Converts to List of parts */
+    def toList: List[String] = FieldPath.unwrap(path)
+
+    /** Is current path root. */
+    def isRoot: Boolean = parts.isEmpty
+
+    /** Full name of the path is dot-separated parts of this path. For root path this will be "."
+      */
+    def full: String = if (isRoot) FieldPath.RootName else parts.mkString(".")
+
+    /** Name of the path is the last part of path. */
+    def name: String = parts.lastOption.getOrElse(FieldPath.RootName)
+
+    /** Changes name of this path */
+    def named(name: String): FieldPath = FieldPath(parts.dropRight(1) :+ name)
+
+    /** Append other [[jap.fields.FieldPath]] to current path */
+    def ++(path: FieldPath): FieldPath = FieldPath(parts ++ path.parts)
+
+    /** Append other path part to current path */
+    def +(path: String): FieldPath = FieldPath(parts :+ path)
+  }
 }
 
 object FieldPathConversions {

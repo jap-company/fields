@@ -17,12 +17,15 @@
 package jap.fields
 package syntax
 
+import jap.fields.error.{ValidationMessages => M}
+import jap.fields.error.{ValidationTypes => T}
+
 import scala.util.Try
 import scala.util.matching.Regex
 
+import GenericSyntax._
 import typeclass._
 import fail._
-import jap.fields.error.{ValidationMessages => M, ValidationTypes => T}
 
 trait ModuleStringSyntax[F[_], V[_], E] {
   implicit final def toStringFieldOps(field: Field[String]): StringFieldOps[F, V, E] = new StringFieldOps(field)
@@ -40,37 +43,37 @@ final class StringFieldOps[F[_], V[_], E](private val field: Field[String]) exte
   def startsWith(
       value: => String
   )(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failMessage(T.StringStartsWith, M.StringStartsWith(value)))(field.value.startsWith(value))
+    field.ensure(_.startsWith(value), _.failMessage(T.StringStartsWith, M.StringStartsWith(value)))
 
   /** Validates that [[jap.fields.Field]]#value ends with `value` */
   def endsWith(
       value: => String
   )(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failMessage(T.StringEndsWith, M.StringEndsWith(value)))(field.value.endsWith(value))
+    field.ensure(_.endsWith(value), _.failMessage(T.StringEndsWith, M.StringEndsWith(value)))
 
   /** Validates that [[jap.fields.Field]]#value is not empty */
   def nonEmpty(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failNonEmpty)(field.value.nonEmpty)
+    field.ensure(_.nonEmpty, _.failNonEmpty)
 
   /** Validates that [[jap.fields.Field]]#value is not blank */
   def nonBlank(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failNonEmpty)(field.value.nonEmpty)
+    field.ensure(_.nonEmpty, _.failNonEmpty)
 
   /** Validates that [[jap.fields.Field]]#value is blank */
   def blank(implicit F: Effect[F], V: Validated[V], FW: FailWithEmpty[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failEmpty)(field.value.isEmpty)
+    field.ensure(_.isEmpty, _.failEmpty)
 
   /** Validates that [[jap.fields.Field]]#value minimum size is `min` */
   def minSize(min: => Int)(implicit F: Effect[F], V: Validated[V], FW: FailWithMinSize[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failMinSize(min))(field.value.size >= min)
+    field.ensure(_.size >= min, _.failMinSize(min))
 
   /** Validates that [[jap.fields.Field]]#value maximum size is `max` */
   def maxSize(max: => Int)(implicit F: Effect[F], V: Validated[V], FW: FailWithMaxSize[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failMaxSize(max))(field.value.size <= max)
+    field.ensure(_.size <= max, _.failMaxSize(max))
 
   /** Validates that [[jap.fields.Field]]#value matches Regexp */
   def matches(r: => String)(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failMessage(T.StringMatch, M.StringMatch(r)))(field.value.matches(r))
+    field.ensure(_.matches(r), _.failMessage(T.StringMatch, M.StringMatch(r)))
 
   /** Validates that [[jap.fields.Field]]#value is matches [[scala.util.matching.Regex]] */
   def matchesRegex(r: => Regex)(implicit F: Effect[F], V: Validated[V], FW: FailWithMessage[E, String]): Rule[F, V, E] =
@@ -78,16 +81,15 @@ final class StringFieldOps[F[_], V[_], E](private val field: Field[String]) exte
 
   /** Validates that [[jap.fields.Field]]#value is part of [[scala.Enumeration]] */
   def isEnum(e: Enumeration)(implicit F: Effect[F], V: Validated[V], FW: FailWithOneOf[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failOneOf(e.values.map(_.toString).toList)) {
-      Try(e.withName(field.value)).toOption.isDefined
-    }
+    field.ensure(
+      v => Try(e.withName(v)).toOption.isDefined,
+      _.failOneOf(e.values.map(_.toString).toList),
+    )
 
   /** Validates that [[jap.fields.Field]]#value is part of Java Enum */
   def isJEnum[T <: Enum[T]](
       values: Array[T]
   )(implicit F: Effect[F], V: Validated[V], FW: FailWithOneOf[E, String]): Rule[F, V, E] =
-    Rule.ensure(field.failOneOf(values.toSeq.map(_.toString))) {
-      values.map(_.name()).contains(field.value)
-    }
+    field.ensure(values.map(_.name()).contains, _.failOneOf(values.toSeq.map(_.toString)))
 
 }

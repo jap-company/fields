@@ -17,9 +17,10 @@
 package jap.fields
 package syntax
 
+import scala.reflect.ClassTag
+
 import typeclass._
 import fail._
-import scala.reflect.ClassTag
 
 trait ModuleGenericSyntax[F[_], V[_], E] {
   implicit final def toFieldOps[P](field: Field[P]): FieldOps[P, F, V, E] =
@@ -68,35 +69,35 @@ final class FieldOps[P, F[_], V[_], E](private val field: Field[P]) extends AnyV
     }
 
   /** See [[Rule.ensure]] */
-  def ensure(test: P => Boolean, error: Field[P] => V[E])(implicit
+  @inline def ensure(test: P => Boolean, error: Field[P] => V[E])(implicit
       F: Effect[F],
       V: Validated[V],
   ): Rule[F, V, E] = Rule.ensure(error(field))(test(field.value))
 
   /** See [[Rule.ensureF]] */
-  def ensureF(test: P => F[Boolean], error: Field[P] => V[E])(implicit
+  @inline def ensureF(test: P => F[Boolean], error: Field[P] => V[E])(implicit
       F: Effect[F],
       V: Validated[V],
   ): Rule[F, V, E] = Rule.ensureF(error(field))(test(field.value))
 
   /** Like [[Rule.ensure]] but for explicit error */
-  def assert(test: P => Boolean, error: Field[P] => E)(implicit
+  @inline def assert(test: P => Boolean, error: Field[P] => E)(implicit
       F: Effect[F],
       V: Validated[V],
   ): Rule[F, V, E] = ensure(test, error.andThen(V.invalid))
 
   /** Like [[Rule.ensureF]] but for explicit error */
-  def assertF(test: P => F[Boolean], error: Field[P] => E)(implicit
+  @inline def assertF(test: P => F[Boolean], error: Field[P] => E)(implicit
       F: Effect[F],
       V: Validated[V],
   ): Rule[F, V, E] = ensureF(test, error.andThen(V.invalid))
 
   /** Returns Suspended Outcome of applying `f` to `field` */
-  def check(f: Field[P] => V[E])(implicit F: Effect[F]): Rule[F, V, E] =
+  @inline def check(f: Field[P] => V[E])(implicit F: Effect[F]): Rule[F, V, E] =
     Rule.pure(f(field))
 
   /** Returns Defered Outcome of applying `f` to `field` */
-  def checkF(f: Field[P] => Rule[F, V, E])(implicit F: Effect[F]): Rule[F, V, E] =
+  @inline def checkF(f: Field[P] => Rule[F, V, E])(implicit F: Effect[F]): Rule[F, V, E] =
     Rule.defer(f(field))
 
   /** Alias for [[equalTo]] */

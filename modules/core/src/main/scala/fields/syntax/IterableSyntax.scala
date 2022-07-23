@@ -19,6 +19,7 @@ package syntax
 
 import scala.annotation.nowarn
 
+import GenericSyntax._
 import typeclass._
 import fail._
 
@@ -40,19 +41,19 @@ final class IterableFieldOps[P, I[X] <: Iterable[X], F[_], V[_], E](private val 
 
   /** Checks that collection is empty */
   def isEmpty(implicit F: Effect[F], V: Validated[V], FW: FailWithEmpty[E, I[P]]): Rule[F, V, E] =
-    Rule.ensure(field.failEmpty)(field.value.isEmpty)
+    field.ensure(_.isEmpty, _.failEmpty)
 
   /** Checks that collection is not empty */
   def nonEmpty(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, I[P]]): Rule[F, V, E] =
-    Rule.ensure(field.failNonEmpty)(field.value.isEmpty)
+    field.ensure(_.nonEmpty, _.failNonEmpty)
 
   /** Checks that collection minimum size is `min` */
   def minSize(min: => Int)(implicit F: Effect[F], V: Validated[V], FW: FailWithMinSize[E, I[P]]): Rule[F, V, E] =
-    Rule.ensure(field.failMinSize(min))(field.value.size >= min)
+    field.ensure(_.size >= min, _.failMinSize(min))
 
   /** Checks that collection maximum size is `max` */
   def maxSize(max: => Int)(implicit F: Effect[F], V: Validated[V], FW: FailWithMaxSize[E, I[P]]): Rule[F, V, E] =
-    Rule.ensure(field.failMaxSize(max))(field.value.size <= max)
+    field.ensure(_.size <= max, _.failMaxSize(max))
 
   /** Applies `check` to each collection element */
   def each(check: Field[P] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =

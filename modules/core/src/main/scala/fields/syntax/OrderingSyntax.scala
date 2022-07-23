@@ -17,6 +17,7 @@
 package jap.fields
 package syntax
 
+import GenericSyntax._
 import typeclass._
 import fail._
 
@@ -35,7 +36,7 @@ final class OrderingFieldOps[P, F[_], V[_], E](private val field: Field[P]) exte
   def >=[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
-      N: Ordering[P],
+      O: Ordering[P],
       FW: FailWithCompare[E, P],
       C: FieldCompare[P, C],
   ): Rule[F, V, E] = gte[C](compared)
@@ -44,19 +45,17 @@ final class OrderingFieldOps[P, F[_], V[_], E](private val field: Field[P]) exte
   def gte[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
-      N: Ordering[P],
+      O: Ordering[P],
       FW: FailWithCompare[E, P],
       C: FieldCompare[P, C],
   ): Rule[F, V, E] =
-    Rule.ensure(field.failGreaterEqual(compared)) {
-      N.gteq(field.value, C.value(compared))
-    }
+    field.ensure(O.gteq(_, C.value(compared)), _.failGreaterEqual(compared))
 
   /** Validates that [[jap.fields.Field]]#value is greater than `compared` */
   def >[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
-      N: Ordering[P],
+      O: Ordering[P],
       FW: FailWithCompare[E, P],
       C: FieldCompare[P, C],
   ): Rule[F, V, E] = gt[C](compared)
@@ -65,19 +64,17 @@ final class OrderingFieldOps[P, F[_], V[_], E](private val field: Field[P]) exte
   def gt[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
-      N: Ordering[P],
+      O: Ordering[P],
       FW: FailWithCompare[E, P],
       C: FieldCompare[P, C],
   ): Rule[F, V, E] =
-    Rule.ensure(field.failGreater(compared)) {
-      N.gt(field.value, C.value(compared))
-    }
+    field.ensure(O.gt(_, C.value(compared)), _.failGreater(compared))
 
   /** Validates that [[jap.fields.Field]]#value is less or equal to `compared` */
   def <=[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
-      N: Ordering[P],
+      O: Ordering[P],
       FW: FailWithCompare[E, P],
       C: FieldCompare[P, C],
   ): Rule[F, V, E] = lte(compared)
@@ -86,19 +83,17 @@ final class OrderingFieldOps[P, F[_], V[_], E](private val field: Field[P]) exte
   def lte[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
-      N: Ordering[P],
+      O: Ordering[P],
       FW: FailWithCompare[E, P],
       C: FieldCompare[P, C],
   ): Rule[F, V, E] =
-    Rule.ensure(field.failLessEqual(compared)) {
-      N.lteq(field.value, C.value(compared))
-    }
+    field.ensure(O.lteq(_, C.value(compared)), _.failLessEqual(compared))
 
   /** Validates that [[jap.fields.Field]]#value is less than `compared` */
   def <[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
-      N: Ordering[P],
+      O: Ordering[P],
       FW: FailWithCompare[E, P],
       C: FieldCompare[P, C],
   ): Rule[F, V, E] = lt[C](compared)
@@ -107,19 +102,17 @@ final class OrderingFieldOps[P, F[_], V[_], E](private val field: Field[P]) exte
   def lt[C](compared: => C)(implicit
       F: Effect[F],
       V: Validated[V],
-      N: Ordering[P],
+      O: Ordering[P],
       FW: FailWithCompare[E, P],
       C: FieldCompare[P, C],
   ): Rule[F, V, E] =
-    Rule.ensure(field.failLess(compared)) {
-      N.lt(field.value, C.value(compared))
-    }
+    field.ensure(O.lt(_, C.value(compared)), _.failLess(compared))
 
   /** Validates that [[jap.fields.Field]]#value is  greaterEqual than `from` and lessEqual `to` */
   def isBetween[FROM, TO](from: => FROM, to: => TO)(implicit
       F: Effect[F],
       V: Validated[V],
-      N: Ordering[P],
+      O: Ordering[P],
       FW: FailWithCompare[E, P],
       CF: FieldCompare[P, FROM],
       CT: FieldCompare[P, TO],

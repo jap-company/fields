@@ -17,6 +17,7 @@
 package jap.fields
 package syntax
 
+import GenericSyntax._
 import typeclass._
 import fail._
 
@@ -35,9 +36,9 @@ final class BooleanFieldOps[F[_], V[_], E](private val field: Field[Boolean]) ex
 
   /** Validates [[jap.fields.Field]]#value is `true` */
   def isTrue(implicit F: Effect[F], V: Validated[V], FW: FailWithCompare[E, Boolean]): Rule[F, V, E] =
-    Rule.ensure(field.failEqual(true))(field.value == true)
+    field.ensure(_ == true, _.failEqual(true))
 
   /** Validates [[jap.fields.Field]]#value is `false` */
   def isFalse(implicit F: Effect[F], V: Validated[V], FW: FailWithCompare[E, Boolean]): Rule[F, V, E] =
-    Rule.ensure(field.failEqual(false))(field.value == false)
+    field.ensure(_ == false, _.failEqual(false))
 }

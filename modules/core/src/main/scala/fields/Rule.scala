@@ -35,33 +35,33 @@ object Rule {
   // ----TAGGED---- //
 
   /** Lazily converts an `V[E]` to `Rule[F, VR, E]` */
-  def pure[F[_], V[_], E](validated: => V[E])(implicit F: Effect[F]): Rule[F, V, E] =
+  @inline def pure[F[_], V[_], E](validated: => V[E])(implicit F: Effect[F]): Rule[F, V, E] =
     Rule(F.suspend(validated))
 
   /** Lazily converts an `F[V[E]]` to a `Rule[F, VR, E]` */
-  def effect[F[_], V[_], E](effect: => F[V[E]])(implicit F: Effect[F]): Rule[F, V, E] =
+  @inline def effect[F[_], V[_], E](effect: => F[V[E]])(implicit F: Effect[F]): Rule[F, V, E] =
     Rule(F.defer(effect))
 
   /** Defers Rule */
-  def defer[F[_], V[_], E](rule: => Rule[F, V, E])(implicit F: Effect[F]): Rule[F, V, E] =
+  @inline def defer[F[_], V[_], E](rule: => Rule[F, V, E])(implicit F: Effect[F]): Rule[F, V, E] =
     Rule(F.defer(rule.unwrap))
 
   /** Flattens Effect with Rule */
-  def flatten[F[_], V[_], E](rule: => F[Rule[F, V, E]])(implicit F: Effect[F]): Rule[F, V, E] =
+  @inline def flatten[F[_], V[_], E](rule: => F[Rule[F, V, E]])(implicit F: Effect[F]): Rule[F, V, E] =
     Rule.effect(F.flatMap(rule)(_.effect))
 
   /** Converts `E` to a `Rule[F, V, E]` */
-  def invalid[F[_], V[_], E](error: => E)(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+  @inline def invalid[F[_], V[_], E](error: => E)(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
     pure(V.invalid(error))
 
   /** Returns always valid `Rule[F, V, E]` */
-  def valid[F[_], V[_], E](implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+  @inline def valid[F[_], V[_], E](implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
     pure(V.valid)
 
   /** Combines two `Rule[F, V, E]`'s using logical AND. Short-circuits if `Validated.strategy` is
     * [[jap.fields.typeclass.FailFastStrategy]]
     */
-  def and[F[_], V[_], E](ra: Rule[F, V, E], rb: Rule[F, V, E])(implicit
+  @inline def and[F[_], V[_], E](ra: Rule[F, V, E], rb: Rule[F, V, E])(implicit
       F: Effect[F],
       V: Validated[V],
   ): Rule[F, V, E] =
@@ -73,7 +73,10 @@ object Rule {
     }
 
   /** Combines two `Rule[F, V, E]`'s using logical OR. Short-circuits if first rule is valid */
-  def or[F[_], V[_], E](ra: Rule[F, V, E], rb: Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+  @inline def or[F[_], V[_], E](ra: Rule[F, V, E], rb: Rule[F, V, E])(implicit
+      F: Effect[F],
+      V: Validated[V],
+  ): Rule[F, V, E] =
     Rule {
       F.flatMap(ra.unwrap) { aa =>
         if (V.isValid(aa)) F.pure(aa)
@@ -82,70 +85,70 @@ object Rule {
     }
 
   /** Applies `rule` only when `test` pass */
-  def when[F[_]: Effect, V[_]: Validated, E](test: => Boolean)(rule: => Rule[F, V, E]): Rule[F, V, E] =
+  @inline def when[F[_]: Effect, V[_]: Validated, E](test: => Boolean)(rule: => Rule[F, V, E]): Rule[F, V, E] =
     defer(if (test) rule else valid)
 
   /** Applies `rule` only when `test` pass */
-  def whenF[F[_], V[_], E](test: => F[Boolean])(rule: => Rule[F, V, E])(implicit
+  @inline def whenF[F[_], V[_], E](test: => F[Boolean])(rule: => Rule[F, V, E])(implicit
       F: Effect[F],
       V: Validated[V],
   ): Rule[F, V, E] =
     effect[F, V, E](F.flatMap(F.defer(test))(if (_) rule.unwrap else valid.unwrap))
 
   /** Ensures that if `test` pass else returns provided `V[E]` */
-  def ensure[F[_], V[_], E](v: => V[E])(test: => Boolean)(implicit
+  @inline def ensure[F[_], V[_], E](v: => V[E])(test: => Boolean)(implicit
       F: Effect[F],
       V: Validated[V],
   ): Rule[F, V, E] =
     pure(if (test) V.valid else v)
 
   /** Ensures that if `test` pass else returns provided `V[E]` */
-  def ensureF[F[_], V[_], E](v: => V[E])(test: => F[Boolean])(implicit
+  @inline def ensureF[F[_], V[_], E](v: => V[E])(test: => F[Boolean])(implicit
       F: Effect[F],
       V: Validated[V],
   ): Rule[F, V, E] =
     effect[F, V, E](F.map(F.defer(test))(if (_) V.valid else v))
 
   /** Asserts that if `test` pass else returns provided `E` */
-  def assert[F[_], V[_], E](e: => E)(test: => Boolean)(implicit
+  @inline def assert[F[_], V[_], E](e: => E)(test: => Boolean)(implicit
       F: Effect[F],
       V: Validated[V],
   ): Rule[F, V, E] = ensure(V.invalid(e))(test)
 
   /** Asserts that if `test` pass else returns provided `E` */
-  def assertF[F[_], V[_], E](e: => E)(test: => F[Boolean])(implicit
+  @inline def assertF[F[_], V[_], E](e: => E)(test: => F[Boolean])(implicit
       F: Effect[F],
       V: Validated[V],
   ): Rule[F, V, E] = ensureF(V.invalid(e))(test)
 
   /** Combines all rules using AND */
-  def andAll[F[_]: Effect, V[_]: Validated, E](rules: List[Rule[F, V, E]]): Rule[F, V, E] =
+  @inline def andAll[F[_]: Effect, V[_]: Validated, E](rules: List[Rule[F, V, E]]): Rule[F, V, E] =
     FoldUtil.fold[Rule[F, V, E]](rules, valid, and)
 
   /** Combines all rules using OR */
-  def orAll[F[_]: Effect, V[_]: Validated, E](rules: List[Rule[F, V, E]]): Rule[F, V, E] =
+  @inline def orAll[F[_]: Effect, V[_]: Validated, E](rules: List[Rule[F, V, E]]): Rule[F, V, E] =
     FoldUtil.fold[Rule[F, V, E]](rules, valid, or)
 
   /** Modifies `rule` Validated value using `f` */
-  def modify[F[_], V[_], E](rule: Rule[F, V, E])(f: V[E] => V[E])(implicit F: Effect[F]) =
+  @inline def modify[F[_], V[_], E](rule: Rule[F, V, E])(f: V[E] => V[E])(implicit F: Effect[F]) =
     Rule(F.map(rule.effect)(f))
 
   /** Modifies `rule` Validated value using `f` */
-  def modifyM[F[_], V[_], E](rule: Rule[F, V, E])(f: V[E] => Rule[F, V, E])(implicit F: Effect[F]) =
+  @inline def modifyM[F[_], V[_], E](rule: Rule[F, V, E])(f: V[E] => Rule[F, V, E])(implicit F: Effect[F]) =
     Rule(F.flatMap(rule.effect)(f.andThen(_.unwrap)))
 
   implicit final class RuleOps[F[_], V[_], E](private val rule: Rule[F, V, E]) extends AnyVal {
 
     /** Unwraps `rule` to its actual type */
-    def unwrap: F[V[E]] = Rule.unwrap(rule)
+    @inline def unwrap: F[V[E]] = Rule.unwrap(rule)
 
     /** Alias for [[unwrap]] */
-    def effect: F[V[E]] = Rule.unwrap(rule)
+    @inline def effect: F[V[E]] = Rule.unwrap(rule)
 
     /** Combines `rule` and result of running `f` on `rule` using [[Rule.and]]. This is tricky syntax for usage with
       * for-comprehension. Check example in [[flatMap]]
       */
-    def map(f: V[E] => V[E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+    @inline def map(f: V[E] => V[E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
       Rule.and(rule, Rule.modify(rule)(f))
 
     /** Combines `rule` and result of running `f` on `rule` using [[Rule.and]]. This is tricky syntax for usage with
@@ -167,9 +170,9 @@ object Rule {
       *   ] = Invalid(List(root -> must be greater than 4, root -> must be less than 4, root -> must not be equal to 4))
       * }}}
       */
-    def flatMap(f: V[E] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+    @inline def flatMap(f: V[E] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
       Rule.and(rule, Rule.modifyM(rule)(f))
 
-    def mapK[FF[_]](f: F[V[E]] => FF[V[E]]): Rule[FF, V, E] = Rule(f(effect))
+    @inline def mapK[FF[_]](f: F[V[E]] => FF[V[E]]): Rule[FF, V, E] = Rule(f(effect))
   }
 }

@@ -17,6 +17,7 @@
 package jap.fields
 package syntax
 
+import GenericSyntax._
 import typeclass._
 import fail._
 
@@ -47,14 +48,15 @@ final class OptionFieldOps[P, F[_], V[_], E](private val field: Field[Option[P]]
 
   /** Validates that [[jap.fields.Field]]#value is [[scala.Some]] */
   def isDefined(implicit F: Effect[F], V: Validated[V], FW: FailWithEmpty[E, Option[P]]): Rule[F, V, E] =
-    Rule.ensure(field.failEmpty(FW, V))(field.value.isDefined)
+    field.ensure(_.isDefined, _.failEmpty)
 
   /** Alias for [[isEmpty]] */
-  def isNone(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, Option[P]]): Rule[F, V, E] = isEmpty
+  def isNone(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, Option[P]]): Rule[F, V, E] =
+    isEmpty
 
   /** Validates that [[jap.fields.Field]]#value is [[scala.None]] */
   def isEmpty(implicit F: Effect[F], V: Validated[V], FW: FailWithNonEmpty[E, Option[P]]): Rule[F, V, E] =
-    Rule.ensure(field.failNonEmpty(FW, V))(field.value.isEmpty)
+    field.ensure(_.isEmpty, _.failNonEmpty)
 
   /** Appies `check` to [[jap.fields.Field]]#value if it is [[scala.Some]] or returns valid */
   def some(check: Field[P] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =

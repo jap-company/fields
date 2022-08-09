@@ -5,21 +5,21 @@ import DefaultAccumulateVM._
 class MacrosSuite extends munit.FunSuite {
   test("Field.from") {
     val data = TestData()
-    assertEquals(Field.from(data), Field(FieldPath("data"), data))
-    assertEquals(Field.from(data.nested), Field(FieldPath("data", "nested"), data.nested))
+    assertEquals(Field.from(data), Field(FieldPath.parse("data"), data))
+    assertEquals(Field.from(data.nested), Field(FieldPath.parse("data.nested"), data.nested))
     assertEquals(
       Field.from(data.nested.deep),
-      Field(FieldPath("data", "nested", "deep"), data.nested.deep),
+      Field(FieldPath.parse("data.nested.deep"), data.nested.deep),
     )
   }
 
   test("Field.sub") {
     val data = TestData()
     assertEquals(Field.sub(data), Field(FieldPath.Root, data))
-    assertEquals(Field.sub(data.nested), Field(FieldPath("nested"), data.nested))
+    assertEquals(Field.sub(data.nested), Field(FieldPath.fromPath("nested"), data.nested))
     assertEquals(
       Field.sub(data.nested.deep),
-      Field(FieldPath("nested", "deep"), data.nested.deep),
+      Field(FieldPath.parse("nested.deep"), data.nested.deep),
     )
   }
 
@@ -30,12 +30,12 @@ class MacrosSuite extends munit.FunSuite {
     val deepF    = dataF.sub(_.nested.deep)
     val deepIntF = dataF.sub(_.nested.deep.int)
 
-    assertEquals(nestedF, Field(FieldPath("nested"), data.nested))
+    assertEquals(nestedF, Field(FieldPath.parse("nested"), data.nested))
 
-    assertEquals(deepF, Field(FieldPath("nested", "deep"), data.nested.deep))
+    assertEquals(deepF, Field(FieldPath.parse("nested.deep"), data.nested.deep))
     assertEquals(deepF, nestedF.sub(_.deep))
 
-    assertEquals(deepIntF, Field(FieldPath("nested", "deep", "int"), data.nested.deep.int))
+    assertEquals(deepIntF, Field(FieldPath.parse("nested.deep.int"), data.nested.deep.int))
     assertEquals(deepIntF, nestedF.sub(_.deep.int))
     assertEquals(deepIntF, deepF.sub(_.int))
   }

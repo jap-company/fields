@@ -16,7 +16,7 @@
 
 package jap.fields
 
-/** [[jap.fields.Field]] is heart of the library and contains [[jap.fields.FieldPath]] and its value */
+/** `Field` is heart of the library and contains [[jap.fields.FieldPath]] and its value */
 final case class Field[+P](
     path: FieldPath,
     value: P,
@@ -28,17 +28,25 @@ final case class Field[+P](
   /** Returns [[jap.fields.FieldPath.full]] of `path` */
   def fullPath = path.full
 
-  /** Creates new [[jap.fields.Field]] with provided `value` and `name`. Prepends current fields `path` to this field
-    * `path`
-    */
-  def provideSub[S](name: String, value: S): Field[S] = Field(path + name, value)
+  /** Creates new `Field` with provided `value` and `subPath`. Appends `subPath` to this field `path` */
+  def down[S](part: FieldPart, value: S): Field[S] = Field(path.down(part), value)
 
-  /** Creates new [[jap.fields.Field]] with provided `name` and selected `value`. Prepends current fields `path` to this
-    * field `path`
-    */
-  def selectSub[S](name: String, selector: P => S): Field[S] = Field(path + name, selector(value))
+  /** Creates new `Field` with provided `value` and `subPath`. Appends `subPath` to this field `path` */
+  def down[S](subPath: String, value: S): Field[S] = Field(path.down(subPath), value)
 
-  /** Renames this [[jap.fields.Field]]. Changes last `path` part aka name. */
+  /** Creates new `Field` with provided `value` and `index`. Appends `subIindex` to this field `path` */
+  def downN[S](subIndex: Int, value: S): Field[S] = Field(path.down(subIndex), value)
+
+  /** Creates new `Field` with selected `value` and `subPath`. Appends `subPath` to this field `path` */
+  def down[S](subPath: String, selector: P => S): Field[S] = down(subPath, selector(value))
+
+  /** Creates new `Field` with provided `value` and `subPath`. Appends `subPath` to this field `path` */
+  def down[S](part: FieldPart, selector: P => S): Field[S] = down(part, selector(value))
+
+  /** Creates new `Field` with selected `value` and `subPath`. Appends `subPath` to this field `path` */
+  def downN[S](subIndex: Int, selector: P => S): Field[S] = downN(subIndex, selector(value))
+
+  /** Renames this `Field`. Changes last `path` part aka name. */
   def named(name: String): Field[P] = withPath(path.named(name))
 
   /** Change `path` */
@@ -67,7 +75,7 @@ final case class Field[+P](
 
 object Field {
 
-  /** Create [[jap.fields.Field]] with given `value` and [[FieldPath.Root]] `path` */
+  /** Create `Field` with given `value` and [[FieldPath.Root]] `path` */
   def apply[P](value: P): Field[P] = new Field(FieldPath.Root, value)
 
   implicit final def toErrorFieldOps[P, E](field: Field[P]): syntax.ErrorFieldOps[P, E]        =

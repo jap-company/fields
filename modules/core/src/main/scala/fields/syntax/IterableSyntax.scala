@@ -61,7 +61,7 @@ final class IterableFieldOps[P, I[X] <: Iterable[X], F[_], V[_], E](private val 
 
   /** Applies `check` to each collection element */
   def eachWithIndex(check: (Field[P], Int) => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
-    Rule.andAll(field.value.zipWithIndex.map { case (p, i) => check(field.provideSub(i.toString, p), i) }.toList)
+    Rule.andAll(field.value.zipWithIndex.map { case (p, i) => check(field.downN(i, p), i) }.toList)
 
   /** Applies `check` to each collection element, any should succeed */
   def any(check: Field[P] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
@@ -69,7 +69,7 @@ final class IterableFieldOps[P, I[X] <: Iterable[X], F[_], V[_], E](private val 
 
   /** Applies `check` to each collection element, any should succeed */
   def anyWithIndex(check: (Field[P], Int) => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
-    Rule.orAll(field.value.zipWithIndex.map { case (p, i) => check(field.provideSub(i.toString, p), i) }.toList)
+    Rule.orAll(field.value.zipWithIndex.map { case (p, i) => check(field.downN(i, p), i) }.toList)
 
   /** Verifies that collection has distinct elements using `by` property and fails duplicated items using `fail` */
   @nowarn

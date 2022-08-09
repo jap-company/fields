@@ -12,21 +12,28 @@ Various ways to create and transform `FieldPath` is described in [Syntax](#synta
 import jap.fields._
 
 FieldPath.Root
-FieldPath("request", "name")
-FieldPath(List("request", "name"))
-FieldPath.fromRaw("request.name")
+FieldPath(FieldPart.Path("request"), FieldPart.Index(2))
+FieldPath.fromPaths("request", "name")
+FieldPath.fromPath("request")
+FieldPath.fromIndex(12)
+FieldPath.parse("request.name[1]")
 ```
 
 ### Operations
 
 ```scala mdoc
-val path = FieldPath("a", "b")
+val path = FieldPath.parse("a.b")
 path.isRoot
 path.full
 path.name
 path.named("c")
-path ++ FieldPath("d")
+path ++ FieldPath.fromPath("d")
 path + "d"
+path + FieldPart.Path("d")
+path + 2
+path.down(2)
+path.down("d")
+path.down(FieldPart.Path("d"))
 ```
 
 ### Conversions
@@ -34,7 +41,8 @@ path + "d"
 ```scala mdoc
 import jap.fields.FieldPathConversions._
 
-Field(FieldPath("name"), ""): FieldPath
+Field(FieldPath.fromPath("name"), ""): FieldPath
 "name": FieldPath
+2: FieldPath
 List("request", "name"): FieldPath
 ```

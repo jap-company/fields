@@ -15,14 +15,19 @@
  */
 
 package jap.fields
-package error
+package typeclass
 
-/** Carries `error` with `path` where it occured. Using this can be useful when your `error` type does not support
-  * carrying `path` where it occured but you actually want to know it.
-  */
-case class FieldError[E](
-    path: FieldPath,
-    error: E,
-) {
-  override def toString: String = s"${path.full} $error"
+/** [[jap.fields.typeclass.RunSync]] is a typeclass that help runnin sync like effects */
+trait RunSync[F[_]] {
+
+  /** Run `F[A]` to a value `A` */
+  def run[A](effect: F[A]): A
+}
+
+object RunSync {
+  def apply[F[_]](implicit instance: RunSync[F]): RunSync[F] = instance
+
+  implicit object EffectSyncRunSync extends RunSync[Effect.Sync] {
+    def run[A](effect: A): A = effect
+  }
 }

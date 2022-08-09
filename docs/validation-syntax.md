@@ -63,14 +63,14 @@ nowF > tomorrow
 
 ```scala mdoc:width=100
 Field(None).isDefined
-val someF: Field[Option[Int]] = Field(FieldPath("a"), Some(5))
+val someF: Field[Option[Int]] = Field("a", Some(5))
 someF.isEmpty
 someF.some(_ > 10)
 
 someOrValid {
     for {
         option <- someF.option
-        other <- Field(FieldPath("b"), Some(2)).option
+        other <- Field("b", Some(2)).option
     } yield option < other
 }
 ```
@@ -130,7 +130,7 @@ import Validation._
 def unsafeRun[A](task: Task[A]) = Runtime.global.unsafeRun(task)
 def isPositiveApi(number: Int): zio.Task[Boolean] = zio.UIO(number > 0)
 
-val field = Field(FieldPath("size"), -1)
+val field = Field(FieldPath.fromPath("size"), -1)
 unsafeRun(field.ensureF(isPositiveApi, _.failMessage("API: NOT POSITIVE")).effect)
 unsafeRun(field.assertF(isPositiveApi, _.messageError("API: NOT POSITIVE")).effect)
 ```

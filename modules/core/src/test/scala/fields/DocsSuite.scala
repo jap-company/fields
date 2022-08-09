@@ -21,7 +21,7 @@ class DocsSuite extends munit.FunSuite {
 
     assertEquals(
       requestF.validate.errors,
-      List(MinSize(FieldPath("user", "username"), 4), MinSize(FieldPath("user", "password"), 8)),
+      List(MinSize(FieldPath.parse("user.username"), 4), MinSize(FieldPath.parse("user.password"), 8)),
     )
   }
 

@@ -24,7 +24,7 @@ import jap.fields.CatsInterop.fromCatsMonadDefer
 object Validation extends AccumulateVM[Eval, ValidationError] with CanFailWithValidationError
 import Validation._
 
-def error(path: String) = ValidationError.Invalid(FieldPath(path))
+def error(path: String) = ValidationError.Invalid(FieldPath.fromPath(path))
 
 List[MRule](
     Rule.valid,

@@ -23,7 +23,9 @@ case class ValidationMessage(
     path: FieldPath,
     error: String,
     message: Option[String] = None,
-)
+) {
+  override def toString = s"${path.full} ${message.getOrElse(error)}"
+}
 object ValidationMessage {
   def apply(path: FieldPath, error: String, message: String): ValidationMessage =
     ValidationMessage(path, error, Some(message))

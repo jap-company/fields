@@ -15,14 +15,19 @@
  */
 
 package jap.fields
-package error
+package typeclass
 
-/** Carries `error` with `path` where it occured. Using this can be useful when your `error` type does not support
-  * carrying `path` where it occured but you actually want to know it.
-  */
-case class FieldError[E](
-    path: FieldPath,
-    error: E,
-) {
-  override def toString: String = s"${path.full} $error"
+trait MapKeyToPart[K] {
+  def toPart(key: K, index: Int): FieldPart
+}
+
+trait MapKeyToPartInstances0 {
+  implicit def defaultIndexKey[K]: MapKeyToPart[K] = (_, index) => FieldPart.Index(index)
+}
+
+object MapKeyToPart extends MapKeyToPartInstances0 {
+  def apply[K](implicit instance: MapKeyToPart[K]) = instance
+
+  implicit val stringMapKeyToPart: MapKeyToPart[String] = (key, _) => FieldPart.Path(key)
+  implicit val intMapKeyToPart: MapKeyToPart[Int]       = (key, _) => FieldPart.Path(key.toString)
 }

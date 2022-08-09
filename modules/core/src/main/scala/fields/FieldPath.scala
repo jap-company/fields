@@ -131,18 +131,18 @@ object FieldPartConversions {
 
 object FieldPathConversions {
 
-  /** Conversion for [[jap.fields.FieldPath.fromPath]] */
+  /** Conversion for `FieldPath.fromPath` */
   implicit def fromPath(path: String): FieldPath = FieldPath.fromPath(path)
 
-  /** Conversion for [[jap.fields.FieldPath.fromIndex]] */
+  /** Conversion for `FieldPath.fromIndex` */
   implicit def fromIndex(index: Int): FieldPath = FieldPath.fromIndex(index)
 
-  /** Conversion for [[jap.fields.FieldPath.apply]] */
+  /** Conversion for `FieldPath.apply` */
   implicit def fromParts(parts: List[FieldPart]): FieldPath = FieldPath(parts)
 
-  /** Conversion for [[jap.fields.FieldPath.fromPaths]] */
+  /** Conversion for `FieldPath.fromPaths` */
   implicit def fromPaths(parts: List[String]): FieldPath = FieldPath.fromPaths(parts)
 
-  /** Conversion for [[jap.fields.FieldPath.fromField]] */
+  /** Conversion for `FieldPath.fromField` */
   implicit def fromField[P](f: Field[P]): FieldPath = FieldPath.fromField(f)
 }

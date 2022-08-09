@@ -16,32 +16,51 @@
 
 package jap.fields
 
-/** [[jap.fields.FieldPath]] contains path parts of the Field. */
-final case class FieldPath(private val parts: List[String]) extends AnyVal {
+/** `FieldPath` contains path parts of the Field. */
+final case class FieldPath(parts: List[FieldPart]) extends AnyVal {
 
   /** Accessor to parts */
-  def toList: List[String] = parts
+  def toList: List[String] = parts.map(_.toString)
 
   /** Is current path root. */
   def isRoot: Boolean = parts.isEmpty
 
-  /** Full name of the path is dot-separated parts of this path. For root path this will be "."
-    */
-  def full: String = if (isRoot) FieldPath.RootName else parts.mkString(".")
+  /** Full name of the path of this path. For root path this will be "." */
+  def full: String =
+    parts.foldLeft(FieldPath.RootName) {
+      case (FieldPath.RootName, FieldPart.Path(path)) => FieldPath.RootName + path
+      case (acc, FieldPart.Path(path))                => s"$acc.$path"
+      case (acc, FieldPart.Index(index))              => s"$acc[$index]"
+    }
 
-  /** Name of the path is the last part of path.
-    */
-  def name: String = parts.lastOption.getOrElse(FieldPath.RootName)
+  /** Name of the path is the last part of path. */
+  def name: String = parts.lastOption.map(_.name).getOrElse(FieldPath.RootName)
 
   /** Changes name of this path */
-  def named(name: String): FieldPath = FieldPath(parts.dropRight(1) :+ name)
+  def named(name: String): FieldPath = FieldPath(parts.dropRight(1) :+ FieldPart.Path(name))
 
-  /** Append other [[jap.fields.FieldPath]] to current path */
+  /** Append other `FieldPath` to current path */
   def ++(path: FieldPath): FieldPath = FieldPath(parts ++ path.parts)
 
   /** Append other path part to current path */
-  def +(path: String): FieldPath = FieldPath(parts :+ path)
+  def +(path: String): FieldPath = down(path)
 
+  /** Append other index part to current path */
+  def +(index: Int): FieldPath = down(index)
+
+  /** Append other part to current path */
+  def +(part: FieldPart): FieldPath = down(part)
+
+  /** Append other part to current path */
+  def down(part: FieldPart): FieldPath = FieldPath(parts :+ part)
+
+  /** Append other path part to current path */
+  def down(path: String): FieldPath = FieldPath(parts :+ FieldPart.Path(path))
+
+  /** Append other index part to current path */
+  def down(index: Int): FieldPath = FieldPath(parts :+ FieldPart.Index(index))
+
+  /** Shows `FieldPath.full` */
   override def toString: String = full
 }
 
@@ -53,29 +72,74 @@ object FieldPath {
   /** Root FieldPath */
   val Root = FieldPath()
 
-  /** Create [[jap.fields.FieldPath]] from `parts` */
-  def apply(parts: String*): FieldPath = FieldPath(parts.toList)
+  /** Create `FieldPath` from Path `parts` */
+  def fromPaths(parts: List[String]): FieldPath = FieldPath(parts.map(FieldPart.Path(_)))
 
-  /** Parse [[jap.fields.FieldPath]] from dot-separated `path` string */
-  def fromRaw(path: String) = FieldPath(path.split('.').toList)
+  /** Create `FieldPath` from Path `parts` */
+  def fromPaths(parts: String*): FieldPath = fromPaths(parts.toList)
 
-  /** Create [[jap.fields.FieldPath]] from `String` */
-  def fromString(path: String): FieldPath = FieldPath(path :: Nil)
+  /** Create `FieldPath` from `parts` VarArgs */
+  def apply(parts: FieldPart*): FieldPath = FieldPath(parts.toList)
 
-  /** Create [[jap.fields.FieldPath]] from `List[String]` */
-  def fromList(path: List[String]): FieldPath = FieldPath(path)
+  /** Create `FieldPath` from `String` */
+  def fromPath(path: String): FieldPath = FieldPath(FieldPart.Path(path))
 
-  /** Create [[jap.fields.FieldPath]] from [[jap.fields.Field]] */
+  /** Create `FieldPath` from `Int` */
+  def fromIndex(index: Int): FieldPath = FieldPath(FieldPart.Index(index))
+
+  /** Create `FieldPath` from [[jap.fields.Field]] */
   def fromField[P](f: Field[P]): FieldPath = f.path
+
+  val IndexRegex = "\\[(\\d+)\\]".r
+
+  /** Parse `FieldPath` from dot-separated `path` string */
+  def parse(path: String) = FieldPath(
+    path
+      .split('.')
+      .flatMap { part =>
+        FieldPart.Path(part.takeWhile(_ != '[')) +: IndexRegex
+          .findAllMatchIn(part)
+          .map(i => FieldPart.Index(i.group(1).toInt))
+          .toList
+      }
+      .toList
+  )
+}
+
+sealed abstract class FieldPart {
+  def name: String
+}
+object FieldPart                {
+  case class Path(value: String) extends FieldPart {
+    def name = value
+  }
+  case class Index(value: Int)   extends FieldPart {
+    def name = value.toString
+  }
+}
+
+object FieldPartConversions {
+
+  /** Conversion from `String` to [[jap.fields.FieldPart.Path]] */
+  implicit def fromPath(path: String): FieldPart = FieldPart.Path(path)
+
+  /** Conversion from `String` to [[jap.fields.FieldPart.Index]] */
+  implicit def fromIndex(index: Int): FieldPart = FieldPart.Index(index)
 }
 
 object FieldPathConversions {
 
-  /** Conversion for [[jap.fields.FieldPath.fromString]] */
-  implicit def fromRaw(path: String): FieldPath = FieldPath.fromRaw(path)
+  /** Conversion for [[jap.fields.FieldPath.fromPath]] */
+  implicit def fromPath(path: String): FieldPath = FieldPath.fromPath(path)
 
-  /** Conversion for [[jap.fields.FieldPath.fromList]] */
-  implicit def fromList(path: List[String]): FieldPath = FieldPath.fromList(path)
+  /** Conversion for [[jap.fields.FieldPath.fromIndex]] */
+  implicit def fromIndex(index: Int): FieldPath = FieldPath.fromIndex(index)
+
+  /** Conversion for [[jap.fields.FieldPath.apply]] */
+  implicit def fromParts(parts: List[FieldPart]): FieldPath = FieldPath(parts)
+
+  /** Conversion for [[jap.fields.FieldPath.fromPaths]] */
+  implicit def fromPaths(parts: List[String]): FieldPath = FieldPath.fromPaths(parts)
 
   /** Conversion for [[jap.fields.FieldPath.fromField]] */
   implicit def fromField[P](f: Field[P]): FieldPath = FieldPath.fromField(f)

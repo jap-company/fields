@@ -5,22 +5,12 @@ const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
 const apiUrl = 'api';
+const repoUrl = 'https://github.com/jap-company/fields'
 
-const local = {
-  baseUrl: '/',
-  url: 'http://localhost:3000',
-}
-
-const github = {
+const site = {
   baseUrl: '/fields/',
   url: 'https://jap-company.github.io',
 }
-
-const repoUrl = 'https://github.com/jap-company/fields'
-
-// Uncomment for local development. Do not forget to comment back
-// const site = local
-const site = github
 const title = 'Fields'
 const tagline = 'Scala validation library written in Tagless Final.'
 const keywords = ['fields', 'scala', 'validation', 'library', 'macros', 'zio', 'cats', 'short-circuit', 'scala 3', 'scala 2.12', 'scala 2.13', 'tagless-final', 'error paths']

@@ -20,27 +20,35 @@ import scala.annotation.tailrec
 import scala.quoted.*
 import scala.runtime.SymbolLiteral
 
+import FieldPart._
+
 class SelectorMacro[Q <: Quotes](using val q: Q) {
   import q.reflect.*
 
-  def stringExpr(value: String) = Literal(StringConstant(value)).asExprOf[String]
+  given FieldPartToExpr: ToExpr[FieldPart] with {
+    def apply(part: FieldPart)(using Quotes) =
+      import quotes.reflect._
+      part match {
+        case Path(value)  => '{ Path(${ Expr(value) }) }
+        case Index(value) => '{ Index(${ Expr(value) }) }
+      }
+  }
 
   // Recursively extracts names from call chain
-  def selectorPath(term: Term, includeIdent: Boolean, title: String): Expr[List[String]] = {
+  def selectorPath(term: Term, includeIdent: Boolean, title: String): Expr[List[FieldPart]] = {
     @tailrec
-    def go(term: Term, acc: List[String] = Nil): List[String] =
+    def go(term: Term, acc: List[FieldPart] = Nil): List[FieldPart] =
       term match {
-        case Ident(name)                                                      => if (includeIdent) name :: acc else acc
-        case Select(This(_), name)                                            => if (includeIdent) name :: acc else acc
-        case Select(rest, name)                                               => go(rest, name.toString :: acc)
-        case Inlined(_, _, rest)                                              => go(rest, acc)
-        case Apply(Select(rest, "apply"), List(Literal(IntConstant(index))))  => go(rest, index.toString :: acc)
-        case Apply(Select(rest, "apply"), List(Literal(StringConstant(key)))) => go(rest, key :: acc)
+        case Ident(name)           => if (includeIdent) Path(name) :: acc else acc
+        case Select(This(_), name) => if (includeIdent) Path(name) :: acc else acc
+        case Select(rest, name)    => go(rest, Path(name.toString) :: acc)
+        case Inlined(_, _, rest)   => go(rest, acc)
+        case Apply(Select(rest, "apply"), List(Literal(IntConstant(index))))  => go(rest, Index(index) :: acc)
+        case Apply(Select(rest, "apply"), List(Literal(StringConstant(key)))) => go(rest, Path(key) :: acc)
         case unmatched => report.errorAndAbort(FieldMacroMessage.selectorErrorMessage(title))
       }
 
-    // report.info(term.show(using Printer.TreeStructure))
-    Expr.ofList(go(term).map(stringExpr))
+    Expr(go(term))
   }
 }
 

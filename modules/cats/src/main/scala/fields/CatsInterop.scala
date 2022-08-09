@@ -21,6 +21,7 @@ import cats.data.{Validated => CatsValidated, _}
 import jap.fields.error.ValidationError
 import jap.fields.fail._
 import jap.fields.typeclass._
+
 trait CatsInteropInstances0 {
   type ValidatedAccumulate[K[_], E] = CatsValidated[K[E], Unit]
   type ValidatedAccumulateNec[E]    = CatsValidated[NonEmptyChain[E], Unit]
@@ -60,18 +61,49 @@ object CatsInterop extends CatsInteropInstances {
     def map[A, B](fa: F[A])(f: A => B): F[B]        = Monad[F].map(fa)(f)
   }
 
+  implicit object EvalRunSync extends RunSync[Eval] {
+    def run[A](effect: Eval[A]): A = effect.value
+  }
+
+  implicit object ValidatedNelHasErrors extends HasErrors[ValidatedAccumulateNel] {
+    def errors[E](v: ValidatedAccumulateNel[E]): List[E] = v.fold(_.toList, _ => Nil)
+  }
+
+  implicit object ValidatedNecHasErrors extends HasErrors[ValidatedAccumulateNec] {
+    def errors[E](v: ValidatedAccumulateNec[E]): List[E] = v.fold(_.toChain.toList, _ => Nil)
+  }
+
+  trait ValidatedNelCanHasErrors {
+    implicit def toHasErrors: HasErrors[ValidatedAccumulateNel] = ValidatedNelHasErrors
+  }
+
+  trait ValidatedNecCanHasErrors {
+    implicit def toHasErrors: HasErrors[ValidatedAccumulateNec] = ValidatedNecHasErrors
+  }
+
+  trait EvalCanRunSync {
+    implicit def toEvalRunSync: RunSync[Eval] = EvalRunSync
+  }
+
   /** Base trait for ValidationModule where [[jap.fields.typeclass.Validated]] is Validated[NonEmptyChain[E], Unit] */
-  abstract class ValidatedNecVM[F[_]: Effect, E] extends ValidationModule[F, ValidatedAccumulateNec, E]
+  abstract class ValidatedNecVM[F[_]: Effect, E]
+      extends ValidationModule[F, ValidatedAccumulateNec, E]
+      with ValidatedNecCanHasErrors
 
   /** Base trait for ValidationModule where [[jap.fields.typeclass.Validated]] is Validated[NonEmptyList[E], Unit] */
-  abstract class ValidatedNelVM[F[_]: Effect, E] extends ValidationModule[F, ValidatedAccumulateNel, E]
+  abstract class ValidatedNelVM[F[_]: Effect, E]
+      extends ValidationModule[F, ValidatedAccumulateNel, E]
+      with ValidatedNelCanHasErrors
 
   /** Default ValidationModule where:
     *   - Effect is `cats.Eval`
     *   - Validated is Validated[NonEmptyList[E], Unit]
     *   - Error is ValidationError
     */
-  trait DefaultValidatedNelVM  extends ValidatedNelVM[Eval, ValidationError] with CanFailWithValidationError
+  trait DefaultValidatedNelVM
+      extends ValidatedNelVM[Eval, ValidationError]
+      with CanFailWithValidationError
+      with EvalCanRunSync
   object DefaultValidatedNelVM extends DefaultValidatedNelVM
 
   /** Default ValidationModule where:
@@ -79,6 +111,9 @@ object CatsInterop extends CatsInteropInstances {
     *   - Validated is Validated[NonEmptyChain[E], Unit]
     *   - Error is ValidationError
     */
-  trait DefaultValidatedNecVM  extends ValidatedNecVM[Eval, ValidationError] with CanFailWithValidationError
+  trait DefaultValidatedNecVM
+      extends ValidatedNecVM[Eval, ValidationError]
+      with CanFailWithValidationError
+      with EvalCanRunSync
   object DefaultValidatedNecVM extends DefaultValidatedNecVM
 }

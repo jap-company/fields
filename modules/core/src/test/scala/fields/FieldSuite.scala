@@ -11,11 +11,11 @@ class FieldSuite extends munit.FunSuite {
   }
   test("Field.provideSub") {
     val field = Field("a", "a")
-    assertEquals(field.provideSub("b", "b"), Field("a.b", "b"))
+    assertEquals(field.down("b", "b"), Field(FieldPath.parse("a.b"), "b"))
   }
   test("Field.selectSub") {
     val field = Field("a", "a")
-    assertEquals(field.selectSub("A", _.toUpperCase), Field("a.A", "A"))
+    assertEquals(field.down("A", (_: String).toUpperCase), Field(FieldPath.parse("a.A"), "A"))
   }
   test("Field.option") {
     assertEquals(Field(Some(2)).option, Some(Field(2)))

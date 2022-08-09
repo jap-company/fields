@@ -26,6 +26,7 @@ lazy val V      = new {
   val Scala213 = "2.13.8"
   val Scala212 = "2.12.16"
   val MUnit    = "0.7.29"
+  val Circe    = "0.14.2"
 }
 val editorScala = V.Scala3
 
@@ -71,6 +72,7 @@ lazy val `fields-core` =
           case _        => List("org.scala-lang" % "scala-reflect" % scalaVersion.value)
         }
       },
+      libraryDependencies += "io.circe" %% "circe-core" % V.Circe % Optional,
     )
     .enablePlugins(BuildInfoPlugin)
 
@@ -102,6 +104,7 @@ lazy val examples =
       crossScalaVersions                     := Nil,
       publishArtifact                        := false,
       libraryDependencies += "org.typelevel" %% "cats-effect" % "2.5.5",
+      libraryDependencies += "io.circe"      %% "circe-core"  % V.Circe,
     )
     .dependsOn(`fields-core`, `fields-zio`, `fields-cats`)
 
@@ -154,8 +157,9 @@ lazy val `fields-docs`  =
          "-doc-title", "Fields",
          "-doc-version", s"v${latestVersion.value}",
          "-doc-logo", (LocalRootProject / baseDirectory).value.getAbsolutePath + "/website/static/img/logo.svg",
-       )
+       ),
        // format: on
+      libraryDependencies += "io.circe" %% "circe-core" % V.Circe,
     )
     .dependsOn(`fields-core`, `fields-cats`, `fields-zio`)
     .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)

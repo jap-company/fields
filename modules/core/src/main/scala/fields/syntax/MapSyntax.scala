@@ -33,26 +33,54 @@ trait MapSyntax {
 final class MapFieldOps[K, P, F[_], V[_], E](private val field: Field[Map[K, P]]) extends AnyVal {
 
   /** Applies `check` to each Map element, each should succeed */
-  def each(f: Field[(K, P)] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
-    Rule.andAll(field.value.map { case entry @ (key, _) => f(field.provideSub(key.toString, entry)) }.toList)
+  def each(f: Field[(K, P)] => Rule[F, V, E])(implicit
+      F: Effect[F],
+      V: Validated[V],
+      TP: MapKeyToPart[K],
+  ): Rule[F, V, E] =
+    Rule.andAll(field.value.zipWithIndex.map { case (entry @ (key, _), index) =>
+      f(field.down(TP.toPart(key, index), entry))
+    }.toList)
 
   /** Applies `check` to each Map key, each should succeed */
-  def eachKey(check: Field[K] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+  def eachKey(check: Field[K] => Rule[F, V, E])(implicit
+      F: Effect[F],
+      V: Validated[V],
+      TP: MapKeyToPart[K],
+  ): Rule[F, V, E] =
     each(e => check(e.first))
 
   /** Applies `check` to each Map value, each should succeed */
-  def eachValue(check: Field[P] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+  def eachValue(check: Field[P] => Rule[F, V, E])(implicit
+      F: Effect[F],
+      V: Validated[V],
+      TP: MapKeyToPart[K],
+  ): Rule[F, V, E] =
     each(e => check(e.second))
 
   /** Applies `check` to each Map element, any should succeed */
-  def any(check: Field[(K, P)] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
-    Rule.orAll(field.value.map { case entry @ (key, _) => check(field.provideSub(key.toString, entry)) }.toList)
+  def any(check: Field[(K, P)] => Rule[F, V, E])(implicit
+      F: Effect[F],
+      V: Validated[V],
+      TP: MapKeyToPart[K],
+  ): Rule[F, V, E] =
+    Rule.orAll(field.value.zipWithIndex.map { case (entry @ (key, _), index) =>
+      check(field.down(TP.toPart(key, index), entry))
+    }.toList)
 
   /** Applies `check` to each Map key, any should succeed */
-  def anyKey(check: Field[K] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+  def anyKey(check: Field[K] => Rule[F, V, E])(implicit
+      F: Effect[F],
+      V: Validated[V],
+      TP: MapKeyToPart[K],
+  ): Rule[F, V, E] =
     any(e => check(e.first))
 
   /** Applies `check` to each Map value, any should succeed */
-  def anyValue(check: Field[P] => Rule[F, V, E])(implicit F: Effect[F], V: Validated[V]): Rule[F, V, E] =
+  def anyValue(check: Field[P] => Rule[F, V, E])(implicit
+      F: Effect[F],
+      V: Validated[V],
+      TP: MapKeyToPart[K],
+  ): Rule[F, V, E] =
     any(e => check(e.second))
 }

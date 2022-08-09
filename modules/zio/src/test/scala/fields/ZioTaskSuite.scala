@@ -50,7 +50,7 @@ object ZioTaskSuite extends DefaultRunnableSpec {
             .effect
             .memoize
 
-        val expectedToInit = (0 to 10).map(v => FieldPath(v.toString)).toList
+        val expectedToInit = (0 to 10).map(v => FieldPath.fromPath(v.toString)).toList
 
         val beforeRun = inited.toList.length
 

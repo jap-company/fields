@@ -15,18 +15,19 @@
  */
 
 package jap.fields
-package error
+package typeclass
 
-/** Error type that holds path where error occured, error type and human-readable message
-  */
-case class ValidationMessage(
-    path: FieldPath,
-    error: String,
-    message: Option[String] = None,
-) {
-  override def toString = s"${path.full} ${message.getOrElse(error)}"
+trait MapKeyToPart[K] {
+  def toPart(key: K, index: Int): FieldPart
 }
-object ValidationMessage {
-  def apply(path: FieldPath, error: String, message: String): ValidationMessage =
-    ValidationMessage(path, error, Some(message))
+
+trait MapKeyToPartInstances0 {
+  implicit def defaultIndexKey[K]: MapKeyToPart[K] = (_, index) => FieldPart.Index(index)
+}
+
+object MapKeyToPart extends MapKeyToPartInstances0 {
+  def apply[K](implicit instance: MapKeyToPart[K]) = instance
+
+  implicit val stringMapKeyToPart: MapKeyToPart[String] = (key, _) => FieldPart.Path(key)
+  implicit val intMapKeyToPart: MapKeyToPart[Int]       = (key, _) => FieldPart.Path(key.toString)
 }

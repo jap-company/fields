@@ -34,6 +34,11 @@ const sidebars = {
         "validation-policy",
       ]
     },
+    {
+      "Interop": [
+        "interop-circe",
+      ]
+    },
     "goals",
     "contributing",
   ]

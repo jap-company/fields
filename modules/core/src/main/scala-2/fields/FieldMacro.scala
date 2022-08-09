@@ -22,15 +22,20 @@ import scala.reflect.macros.blackbox
 class FieldMacro(val c: blackbox.Context) {
   import c.universe._
 
-  def selectorPath(tree: Tree, includeIdent: Boolean, title: String): List[String] = {
+  def pathPart(path: String): Tree = q"jap.fields.FieldPart.Path($path)"
+  def indexPart(index: Int): Tree  = q"jap.fields.FieldPart.Index($index)"
+
+  def selectorPath(tree: Tree, includeIdent: Boolean, title: String): List[Tree] = {
     @tailrec
-    def go(tree: Tree, acc: List[String] = Nil): List[String] =
+    def go(tree: Tree, acc: List[Tree] = Nil): List[Tree] =
       tree match {
-        case Ident(name: TermName)           => if (includeIdent) name.toString :: acc else acc
-        case Select(This(_), name: TermName) => if (includeIdent) name.toString :: acc else acc
-        case Select(rest, name: TermName)    => go(rest, name.toString :: acc)
-        case Apply(Select(rest, TermName("apply")), List(Literal(Constant(name)))) => go(rest, name.toString :: acc)
-        case Apply(Select(rest, TermName("apply")), List(Literal(Constant(name)))) => go(rest, name.toString :: acc)
+        case Ident(name: TermName)           => if (includeIdent) pathPart(name.toString) :: acc else acc
+        case Select(This(_), name: TermName) => if (includeIdent) pathPart(name.toString) :: acc else acc
+        case Select(rest, name: TermName)    => go(rest, pathPart(name.toString) :: acc)
+        case Apply(Select(rest, TermName("apply")), List(Literal(Constant(path: String)))) =>
+          go(rest, pathPart(path) :: acc)
+        case Apply(Select(rest, TermName("apply")), List(Literal(Constant(index: Int))))   =>
+          go(rest, indexPart(index) :: acc)
         case _ => c.abort(c.enclosingPosition, FieldMacroMessage.selectorErrorMessage(title))
       }
 
@@ -40,14 +45,14 @@ class FieldMacro(val c: blackbox.Context) {
   def fromSubMacro[A](value: c.Expr[A]): c.Expr[Field[A]] = {
     // c.info(c.enclosingPosition, showRaw(value.tree), true)
     val parts = selectorPath(value.tree, includeIdent = false, title = "Field.sub")
-    val path  = q"jap.fields.FieldPath(${parts.map(n => Literal(Constant(n)))})"
+    val path  = q"jap.fields.FieldPath($parts)"
     c.Expr[Field[A]](q"""jap.fields.Field($path, $value)""")
   }
 
   def fromMacro[A](value: c.Expr[A]): c.Expr[Field[A]] = {
     // c.info(c.enclosingPosition, showRaw(value.tree), true)
     val parts = selectorPath(value.tree, includeIdent = true, title = "Field.from")
-    val path  = q"jap.fields.FieldPath(${parts.map(n => Literal(Constant(n)))})"
+    val path  = q"jap.fields.FieldPath($parts)"
     c.Expr[Field[A]](q"""jap.fields.Field($path, $value)""")
   }
 
@@ -58,7 +63,7 @@ class FieldMacro(val c: blackbox.Context) {
     val q"$_.$_[..$_]($parent)" = c.prefix.tree
     // c.info(c.enclosingPosition, showRaw(body), true)
     val parts                   = selectorPath(body, includeIdent = false, title = "Field#sub")
-    val path                    = q"jap.fields.FieldPath(${parts.map(n => Literal(Constant(n)))})"
+    val path                    = q"jap.fields.FieldPath($parts)"
     c.Expr[Field[S]](q"""jap.fields.Field($parent.path ++ $path, $selector($parent.value))""")
   }
 

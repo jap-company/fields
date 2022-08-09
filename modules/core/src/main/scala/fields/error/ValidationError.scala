@@ -22,7 +22,7 @@ sealed trait ValidationError {
   def path: FieldPath
   def error: String
   def message: Option[String]
-  override def toString = s"${path.full} -> ${message.getOrElse(error)}"
+  override def toString = s"${path.full} ${message.getOrElse(error)}"
 }
 
 object ValidationError {

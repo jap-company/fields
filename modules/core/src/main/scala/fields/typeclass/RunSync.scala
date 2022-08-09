@@ -15,18 +15,19 @@
  */
 
 package jap.fields
-package error
+package typeclass
 
-/** Error type that holds path where error occured, error type and human-readable message
-  */
-case class ValidationMessage(
-    path: FieldPath,
-    error: String,
-    message: Option[String] = None,
-) {
-  override def toString = s"${path.full} ${message.getOrElse(error)}"
+/** [[jap.fields.typeclass.RunSync]] is a typeclass that help runnin sync like effects */
+trait RunSync[F[_]] {
+
+  /** Run `F[A]` to a value `A` */
+  def run[A](effect: F[A]): A
 }
-object ValidationMessage {
-  def apply(path: FieldPath, error: String, message: String): ValidationMessage =
-    ValidationMessage(path, error, Some(message))
+
+object RunSync {
+  def apply[F[_]](implicit instance: RunSync[F]): RunSync[F] = instance
+
+  implicit object EffectSyncRunSync extends RunSync[Effect.Sync] {
+    def run[A](effect: A): A = effect
+  }
 }

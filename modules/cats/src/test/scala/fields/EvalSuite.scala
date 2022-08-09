@@ -42,7 +42,7 @@ class EvalSuite extends munit.FunSuite {
           .memoize
       }
 
-    val expectedToInit = (0 to 10).map(v => FieldPath(v.toString)).toList
+    val expectedToInit = (0 to 10).map(v => FieldPath.fromPath(v.toString)).toList
     assertEquals(touch.touched.length, 0)
     assertEquals(rule.errors.value, MinSize("10", 10) :: Nil)
     assertEquals(touch.touched, expectedToInit)

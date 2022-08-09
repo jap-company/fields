@@ -19,7 +19,7 @@ import jap.fields.DefaultAccumulateVM._
 case class Request(name: String)
 val request = Request("Ann")
 Field(request.name)
-Field(FieldPath("request", "name"),request.name)
+Field(FieldPath.parse("request.name"),request.name)
 Field.from(request.name)
 Field.sub(request.name)
 ```
@@ -29,14 +29,14 @@ Field.sub(request.name)
 ```scala mdoc:width=100
 case class B()
 case class A(b: B)
-val a = Field(FieldPath("a"), A(B()))
+val a = Field(FieldPath.fromPath("a"), A(B()))
 a.sub(_.b)
-a.provideSub("b", a.value.b)
-a.selectSub("b", _.b)
+a.down("b", a.value.b)
+a.down("b", _.b)
 a.map(_.b)
 a.mapPath(_ + "A")
 a.named("A")
-a.withPath(FieldPath("b"))
+a.withPath(FieldPath.fromPath("b"))
 a.withValue(3)
 ```
 

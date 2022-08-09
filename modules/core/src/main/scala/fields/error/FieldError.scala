@@ -24,5 +24,5 @@ case class FieldError[E](
     path: FieldPath,
     error: E,
 ) {
-  override def toString: String = s"${path.full} -> $error"
+  override def toString: String = s"${path.full} $error"
 }

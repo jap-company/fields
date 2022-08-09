@@ -19,8 +19,8 @@ package jap.fields
 /** `FieldPath` contains path parts of the Field. */
 final case class FieldPath(parts: List[FieldPart]) extends AnyVal {
 
-  /** Accessor to parts */
-  def toList: List[String] = parts.map(_.toString)
+  /** Returns list of parts names */
+  def names: List[String] = parts.map(_.name)
 
   /** Is current path root. */
   def isRoot: Boolean = parts.isEmpty
@@ -97,10 +97,12 @@ object FieldPath {
     path
       .split('.')
       .flatMap { part =>
-        FieldPart.Path(part.takeWhile(_ != '[')) +: IndexRegex
-          .findAllMatchIn(part)
-          .map(i => FieldPart.Index(i.group(1).toInt))
-          .toList
+        if (part.isEmpty) Nil
+        else
+          FieldPart.Path(part.takeWhile(_ != '[')) +: IndexRegex
+            .findAllMatchIn(part)
+            .map(i => FieldPart.Index(i.group(1).toInt))
+            .toList
       }
       .toList
   )

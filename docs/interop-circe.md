@@ -1,7 +1,8 @@
 # Circe Interop
 
 Fields provides interop with circe so you can add validation step to Decoder.
-Just import all from CirceInterop and now you can use `usePolicy` extension method to add validation to you Decoder or Codec.
+It is added as optional dependency to `fields-core` module, so if you add circe to your dependencies you then can
+just import all from CirceInterop and now you can use `usePolicy` extension method to add validation to you Decoder or Codec.
 
 Note that this is only limited to `F[_]` that are Sync like `Effect.Sync` or cats `Eval`. To support other `F[_]` implement `RunSync` for it.
 Also path is extracted using `HasFieldPath` type class, so when using custom errors do not forget to implement it, too.

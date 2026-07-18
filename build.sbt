@@ -9,15 +9,15 @@ organization     := "io.github.0lejk4"
 organizationName := "Jap"
 idePackagePrefix := Some("fields")
 startYear        := Some(2022)
-homepage         := Some(url("https://github.com/jap-company/fields"))
-licenses         := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.txt"))
+homepage         := Some(uri("https://github.com/jap-company/fields"))
+licenses         := List("Apache-2.0" -> uri("https://www.apache.org/licenses/LICENSE-2.0.txt"))
 developers       :=
   List(
     Developer(
       "0lejk4",
       "Oleh Dubynskiy",
       "",
-      url("https://github.com/0lejk4"),
+      uri("https://github.com/0lejk4"),
     )
   )
 
@@ -205,7 +205,7 @@ lazy val `fields-docs` =
           else minorVersions.init.mkString(", ") ++ " and " ++ minorVersions.last
         },
       ),
-      updateDocsVariables              := {
+      updateDocsVariables              := Def.uncached {
         val file = (LocalRootProject / baseDirectory).value / "website" / "variables.js"
 
         val fileHeader =

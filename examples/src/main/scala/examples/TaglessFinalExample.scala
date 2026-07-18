@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package jap.fields
 package examples
 package tagless
 
-import jap.fields._
-import jap.fields.fail._
-import jap.fields.syntax.all._
-import jap.fields.typeclass._
+import fields.*
+import fields.fail.*
+import fields.typeclass.*
+import fields.value.syntax.all.*
 
 trait AccountValidator[F[_]] {
   def validateAccountId(accountId: String): F[Boolean]
@@ -33,26 +32,23 @@ object AccountValidator {
 
 case class DepositRequest(accountId: String, amount: Int)
 object DepositRequest {
-  implicit def policy[F[_]: Effect: AccountValidator, V[_]: Validated, E: FailWith.Base]
-      : ValidationPolicy[DepositRequest, F, V, E] =
-    ValidationPolicy
-      .builder[DepositRequest, F, V, E]
+  implicit def policy[F[_]: AccountValidator, V[_], E: FailWith.Base](implicit
+      R: RuleOps[F, V, E]
+  ): PolicyK[Field[DepositRequest], F, V, E] =
+    PolicyK[Field[DepositRequest], F, V, E]
       .subRule(_.amount)(_ > 0)
       .subRule(_.accountId)(
         _.nonBlank,
-        _.ensureF(AccountValidator[F].validateAccountId, _.failMessage("Invalid Account Id")),
+        _.assertF(AccountValidator[F].validateAccountId, _.failMessage("Invalid Account Id")),
       )
-      .build
 }
 
 object TaglessFinalExample {
   showBuildInfo()
 
-  implicit val accountValidator: AccountValidator[Effect.Sync] = new AccountValidator[Effect.Sync] {
-    def validateAccountId(accountId: String): Boolean = false
-  }
+  implicit val accountValidator: AccountValidator[Effect.Sync] = _ => false
 
-  import DefaultAccumulateVM._
+  import value.FieldsDsl.default.*
   final def main(args: Array[String]): Unit = {
 
     val requestF = Field(DepositRequest("", -1))

@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package jap.fields
 package examples
 package medium
 
-import zio.Task
-import zio._
-import zio.console._
+import examples.medium.MediumValidation.*
+import zio.*
 
 import java.time.LocalDateTime
-
-import MediumValidation._
 
 trait UserRepo {
   def userExists(userId: UserId): Task[Boolean]
@@ -37,16 +33,14 @@ trait PostRepo {
 
 case class PostValidationService(postRepo: PostRepo, userRepo: UserRepo) {
   implicit val policy: Policy[MediumPost] =
-    Policy
-      .builder[MediumPost]
-      .rule(MediumPost.policy)
-      .subRule(_.authorId)(_.ensureF(userRepo.userExists, failCode(33)))
-      .subRule(_.postId)(_.ensureF(postRepo.postDoesNotExist, failCode(44)))
-      .subRule(_.title)(_.ensureF(postRepo.titleExists(_).negate, failCode(55)))
-      .build
+    Policy[MediumPost]
+      .and(MediumPost.policy)
+      .subRule(_.authorId)(_.assertF(userRepo.userExists, _.failCode(33)))
+      .subRule(_.postId)(_.assertF(postRepo.postDoesNotExist, _.failCode(44)))
+      .subRule(_.title)(_.assertF(postRepo.titleExists(_).negate, _.failCode(55)))
 }
 
-object MediumExample extends zio.App {
+object MediumExample extends ZIOAppDefault {
   showBuildInfo()
 
   val post = MediumPost(
@@ -76,24 +70,21 @@ object MediumExample extends zio.App {
   println(Field.from(post.tags.apply(3)).path)
   showTitle("FIELD-EXAMPLES-END")
 
-  val userRepo = new UserRepo {
-    def userExists(userId: UserId): Task[Boolean] = UIO(false)
+  val userRepo: UserRepo = new UserRepo {
+    def userExists(userId: UserId): Task[Boolean] = ZIO.from(false)
   }
 
-  val postRepo = new PostRepo {
-    def postDoesNotExist(postId: PostId): Task[Boolean] = UIO(false)
-    def titleExists(title: String): Task[Boolean]       = UIO(true)
+  val postRepo: PostRepo = new PostRepo {
+    def postDoesNotExist(postId: PostId): Task[Boolean] = ZIO.from(false)
+    def titleExists(title: String): Task[Boolean]       = ZIO.from(true)
   }
 
-  val validationService = PostValidationService(postRepo, userRepo)
+  val validationService: PostValidationService = PostValidationService(postRepo, userRepo)
 
   import validationService.policy
-  def run(args: List[String]): URIO[ZEnv, ExitCode] =
-    postF.validate.effect
-      .flatMap { result =>
-        if (result.isValid) putStrLn("Saved post to DB")
-        else putStrLn(s"Responding with ValidationErrors:\n\n${result.errors.mkString("\n")}")
-      }
-      .ignore
-      .exitCode
+  def run: UIO[Unit] =
+    postF.validate.effect.flatMap { result =>
+      if (result.isValid) Console.printLine("Saved post to DB")
+      else Console.printLine(s"Responding with ValidationErrors:\n\n${result.errors.mkString("\n")}")
+    }.ignore
 }

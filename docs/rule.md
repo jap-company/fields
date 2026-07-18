@@ -10,29 +10,29 @@ You can easily convert between Rule\[F, V, E\] and F\[V\[E\]\] back and forth fo
 
 ### Module
 
-ValidationModule contains MRule alias that can help with type inference.
+ValidationDsl contains MRule alias that can help with type inference.
 
 ### Create
 
 ```scala mdoc
 import cats.Eval
-import jap.fields._
-import jap.fields.error._
-import jap.fields.fail._
-import jap.fields.CatsInterop.fromCatsMonadDefer
+import fields.value.FieldsDsl
+import fields.error._
+import fields.fail._
+import fields.CatsInterop.*
 
-object Validation extends AccumulateVM[Eval, ValidationError] with CanFailWithValidationError
+object Validation extends FieldsDsl.BaseAccumulate[Eval, ValidationError] with ValidationError.failWith.Mixin
 import Validation._
 
-def error(path: String) = ValidationError.Invalid(FieldPath.fromPath(path))
+implicit def error(path: String): ValidationError = ValidationError.Invalid(FieldPath.fromPath(path))
 
-List[MRule](
+List[Rule](
     Rule.valid,
-    Rule.invalid(error("Rule.invalid")),
-    Rule.pure(V.invalid(error("Rule.pure"))),
-    Rule.effect(Eval.now(V.invalid(error("Rule.effect")))),
-    Rule.defer(Rule.invalid(error("Rule.defer"))),
-    Rule(Eval.later(V.invalid(error("Rule.apply"))))
+    Rule.invalid("Rule.invalid"),
+    Rule.pure(V.invalid("Rule.pure")),
+    Rule.effect(Eval.now(V.invalid("Rule.effect"))),
+    Rule.defer(Rule.invalid("Rule.defer")),
+    Rule(Eval.later(V.invalid("Rule.apply")))
 ).map(_.effect.value)
 ```
 

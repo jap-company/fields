@@ -7,35 +7,26 @@ Also this typeclass has `strategy` field that will give a hint for short-circuit
 
 Predefined instances:
 
-- `jap.fields.data.Accumulate` - accumulates errors.
-- `jap.fields.data.FailFast` - holds first error that occured. Built using `Either`
+- `List` alised as `jap.fields.Accumulate` - accumulates errors. `Nil` is valid, `List[E]` is invalid holding errors
+- `Option` aliased as `jap.fields.FailFast` - holds first error that occured. `None` is valid, `Some[E]` is invalid holding error
 - `cats.data.ValidatedNel[_, Unit]` - accumulates. Part of cats module
 - `cats.data.ValidatedNec[_, Unit]` - accumulates. Part of cats module
-- `List` - accumulates errors. If list is empty means result is valid else contains errors.
 - `Either[_, Unit]` - fail fast error. `Right[Unit]` is valid, `Left[E]` is invalid holding error.
-- `Option` - fail fast error. `None` is valid, `Some[E]` is invalid holding error
 
 If you need you can use your own Validated data type by creating typeclass instance for it.
 Extend `AccumulateLike` if your type should accumulate errors or if it should fail with first error occured use `FailFastLike`
+You will need to implement a hew methods, here is example for `List`
 
-### Accumulate
-
-Validated data type that accumulates errors.
-
-```scala
-sealed trait Accumulate[+E]
-object Accumulate {
-  case object Valid                       extends Accumulate[Nothing]
-  case class Invalid[+E](errors: List[E]) extends Accumulate[E]
+```scala mdoc
+import fields.typeclass.AccumulateLike
+implicit object ListValidated extends AccumulateLike[List] {
+    def valid[E]: List[E]                         = Nil
+    def invalid[E](e: E): List[E]                 = List(e)
+    def and[E](va: List[E], vb: List[E]): List[E] = va ::: vb
+    def isValid[E](v: List[E]): Boolean           = v.isEmpty
+    def map[E](v: List[E])(f: E => E): List[E]    = v.map(f)
 }
 ```
-
-### FailFast
-
-Validated data type that returns first error occured. Declared as `Option[E]` tagged type.
-
-- `None` is valid
-- `Some[E]` holds the error
 
 ## Syntax
 
@@ -44,12 +35,11 @@ Having Validated for your `V[_]` in scope you can use such syntax
 ### Create
 
 ```scala mdoc
-import jap.fields._
-import jap.fields.data.Accumulate
-import jap.fields.typeclass.Validated
-import jap.fields.syntax.ValidatedSyntax._
+import fields._
+import fields.typeclass.Validated
+import fields.syntax.ValidatedSyntax._
 
-val V: Validated[Accumulate] = Accumulate
+val V = Validated.Accumulate
 val vr1 = V.valid
 val vr2 = V.invalid("ERR01")
 val vr3 = "ERR02".invalid[Accumulate]
@@ -80,6 +70,43 @@ List(vr1, vr1).sequence
 V.traverse is very useful when you want to fail multiple Field`s with same error
 
 ```scala
-import jap.fields.DefaultAccumulateVM._
+import fields.value.FieldsDsl.default._
 V.traverse(Field(FieldPath("1"), 1), Field(FieldPath("2"), 2))(_.failMessage("ERROR"))
+```
+
+### HasErrors
+Helper typeclass that allows to extract errors from your `V[_]` type.
+
+```scala mdoc
+trait HasErrors[V[_]] {
+  def errors[E](v: V[E]): List[E]
+}
+```
+### HasFieldPath
+
+Helper typeclass that allows to extract field path from your `E` error type.
+
+```scala mdoc
+trait HasFieldPath[E] {
+  def getPath(e: E): FieldPath
+}
+```
+
+### PrependPath
+
+Helper typeclass that allows to prepend field path to your `E` error type. Mainly used for lens module
+
+```scala mdoc
+trait PrependPath[E] {
+  def prependPath(path: FieldPath, e: E): E
+}
+```
+
+### MapKeyToPart
+Helper typeclass that allows to map key with index to FieldPart of your `E` error type. Used for MapSyntax for both value and lens modules
+
+```scala mdoc
+trait MapKeyToPart[K] {
+  def toPart(key: K, index: Int): FieldPart
+}
 ```

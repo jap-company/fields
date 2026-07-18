@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package jap.fields
+import fields.*
+import fields.typeclass.*
+import fields.value.syntax.all.*
 
-import jap.fields.syntax.all._
-import jap.fields.typeclass._
-
-import scala.concurrent._
-import scala.concurrent.duration._
 import java.time.LocalDateTime
+import scala.concurrent.*
+import scala.concurrent.duration.*
 
 package object examples {
   implicit val localDateTimeOrdering: Ordering[LocalDateTime] = _ compareTo _
@@ -33,7 +32,7 @@ package object examples {
     println(before + name + after)
   }
 
-  def showErrors[F[_]: Effect, V[_]: HasErrors, E](title: String)(rule: Rule[F, V, E]): F[Unit] =
+  def showErrors[F[_]: Effect, V[_]: HasErrors, E](title: String)(rule: RuleK[F, V, E]): F[Unit] =
     Effect[F].map(rule.errors) { errors =>
       showTitle(title)
       println(errors.mkString("\n"))
@@ -48,7 +47,7 @@ package object examples {
 
   def showBuildInfo() = {
     showTitle("BUILD-INFO")
-    println(jap.fields.BuildInfo)
+    println(fields.BuildInfo)
     showTitle("")
   }
 }

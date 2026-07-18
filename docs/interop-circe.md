@@ -9,22 +9,19 @@ Also path is extracted using `HasFieldPath` type class, so when using custom err
 
 ```scala mdoc
 import io.circe._
-import jap.fields.CatsInterop.DefaultValidatedNelVM._
-import jap.fields.CirceInterop._
-import jap.fields._
+import fields.circe.interop.*
+import fields.value.FieldsDsl.default.*
 
 case class Request(name: String)
 object Request {
   implicit val policy: Policy[Request] =
-    Policy
-      .builder[Request]
+    Policy[Request]
       .subRule(_.name)(
         _.minSize(4),
-        _.ensure(_ != "Rag", _.failMessage("Cannot be Rag")),
+        _.assert(_ != "null", _.failMessage("Cannot be null")),
       )
-      .build
 
-  implicit val decoder: Decoder[Request] = Decoder.forProduct1("name")(Request.apply).usePolicy(policy)
+  implicit val decoder: Decoder[Request] = Decoder.forProduct1("name")(Request.apply).usePolicy(policy.contramap(Field(_)))
 }
 
 val json = Json.obj("name" -> Json.fromString("Rag"))

@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package jap.fields
 package examples
 package medium
 
-import jap.fields.Field
+import MediumValidation.*
 
 import java.time.LocalDateTime
-
-import MediumValidation._
 
 case class PostId(value: Int)             extends AnyVal
 case class UserId(value: Int)             extends AnyVal
@@ -47,18 +44,16 @@ case class MediumPost(
 )
 object MediumPost {
   implicit val policy: Policy[MediumPost] =
-    Policy
-      .builder[MediumPost]
-      .fieldRule(_.sub(_.postId).map(_.value))(_ > 0, _ !== Int.MaxValue)
-      .fieldRule(_.sub(_.authorId).map(_.value))(_ > 0)
+    Policy[MediumPost]
+      .mappedRule(_.sub(_.postId).map(_.value))(_ > 0, _ !== Int.MaxValue)
+      .mappedRule(_.sub(_.authorId).map(_.value))(_ > 0)
       .subRule(_.title)(_.minSize(6), _.maxSize(255))
       .subRule(_.description)(_.some(_.nonBlank))
       .subRule(_.tags)(_.nonEmpty, _.maxSize(12), _.each(_.all(_.minSize(3), _.notEqualTo("JAVA"))))
-      .subRule(_.creationDate, _.updateDate)((c, u) => c < u, (c, u) => c.validate && u.validate)
+      .subRule(_.creationDate, _.updateDate)(_ < _, _.validate && _.validate)
       .subRule(_.paragraphs)(_.eachKey(_.nonEmpty), _.eachValue(validateParagraphContent))
-      .build
 
-  def validateParagraphContent(content: Field[ParagraphContent]): MRule = {
+  def validateParagraphContent(content: Field[ParagraphContent]): Rule = {
     content.whenType[Link](_.map(_.value).all(_.minSize(10), _.maxSize(60))) &&
     content.whenType[Text](_.map(_.value).all(_.minSize(4), _.maxSize(50)))
   }

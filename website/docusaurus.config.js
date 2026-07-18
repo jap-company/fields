@@ -1,10 +1,12 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const {themes} = require('prism-react-renderer');
+const lightCodeTheme = themes.github;
+const darkCodeTheme = themes.dracula;
 
 const apiUrl = 'api';
+const benchmarksUrl = 'benchmarks';
 const repoUrl = 'https://github.com/jap-company/fields'
 
 const site = {
@@ -21,9 +23,13 @@ const config = {
   tagline,
   url: site.url,
   baseUrl: site.baseUrl,
-  onBrokenLinks: 'log',
-  onBrokenMarkdownLinks: 'warn',
-  favicon: '/img/favicon.svg',
+  onBrokenLinks: 'throw',
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'throw',
+    },
+  },
+  favicon: 'img/favicon.svg',
   organizationName: 'jap-company',
   projectName: 'fields',
   trailingSlash: true,
@@ -42,9 +48,9 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          path: '../fields-docs/target/mdoc',
+          path: 'generated-docs',
           sidebarPath: require.resolve('./sidebars.js'),
-          editUrl: params => 'https://github.com/jap-company/fields/tree/master/docs/' + params.docPath,
+          editUrl: params => 'https://github.com/jap-company/fields/edit/v2/docs/' + params.docPath,
         },
         theme: {
           customCss: [
@@ -64,11 +70,11 @@ const config = {
     repoUrl,
   },
   themeConfig:
-    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
+  /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       metadata: [
-        { name: 'keywords', content: keywords.join(', ') },
-        { name: 'description', content: `${title} - ${tagline}` },
+        {name: 'keywords', content: keywords.join(', ')},
+        {name: 'description', content: `${title} - ${tagline}`},
       ],
       navbar: {
         title: 'Fields',
@@ -81,7 +87,12 @@ const config = {
             type: 'doc',
             docId: 'overview',
             position: 'left',
-            label: 'Documention',
+            label: 'Documentation',
+          },
+          {
+            to: 'benchmarks',
+            label: 'Benchmarks',
+            position: 'left'
           },
           {
             label: 'Scaladoc',
@@ -149,7 +160,7 @@ const config = {
         id: 'support_ukraine',
         content:
           'Support Ukraine 🇺🇦 <a target="_blank" rel="noopener noreferrer" \
-            href="http://u24.gov.ua/"> Help Provide Aid to Ukraine</a>.',
+            href="https://u24.gov.ua/"> Help Provide Aid to Ukraine</a>.',
         backgroundColor: '#20232a',
         textColor: '#fff',
         isCloseable: false,

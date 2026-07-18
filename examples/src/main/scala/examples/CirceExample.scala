@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package jap.fields
 package examples
 package circe
 
-import io.circe._
-import jap.fields.CatsInterop.DefaultValidatedNelVM._
-import jap.fields.CirceInterop._
-import jap.fields._
+import fields.circe.interop.*
+import fields.value.FieldsDsl.default.*
+import io.circe.*
 
 case class Form(nested: FormNested)
 case class FormNested(list: List[Int], map: Map[String, String])
@@ -32,19 +30,17 @@ object FormNested {
 
 object Form {
   implicit val policy: Policy[Form] =
-    Policy
-      .builder[Form]
+    Policy[Form]
       .subRule(_.nested.list)(
         _.minSize(2),
-        _.each(_.all(_ > 1, _.ensure(_ != -1, _.failMessage("Cannot be -1")))),
+        _.each(_.all(_ > 1, _.assert(_ != -1, _.failMessage("Cannot be -1")))),
       )
       .subRule(_.nested.map)(
         _.minSize(2),
         _.eachValue(_ !== "value"),
       )
-      .build
 
-  implicit val decoder: Decoder[Form] = Decoder.forProduct1("nested")(Form.apply).usePolicy(policy)
+  implicit val decoder: Decoder[Form] = Decoder.forProduct1("nested")(Form.apply).usePolicy(policy.contramap(Field(_)))
 }
 
 object CirceExample {

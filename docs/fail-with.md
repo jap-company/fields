@@ -22,20 +22,22 @@ trait FailWith[E, +P]
 
 There are predefined FailWith instances for:
 
-- FailWithValidationMessageString - String representing ValidationMessage
-- FailWithValidationTypeString - String representing ValidationType
-- FailWithFieldStringValidationType - FieldError\[String\] representing ValidationType
-- FailWithFieldStringValidationMessage - FieldError\[String\] representing ValidationMessage
-- FailWithValidationError - ValidationError
-- FailWithValidationMessage - ValidationMessage
-- FailWithFieldError - wraps any error with FieldError
+- ValidationMessage.failWith
+- ValidationError.failWith
+- FailWith.string.errorType - String with error type
+- FailWith.string.errorMessage - String with error message
+- FailWith.string.pathAndMessage - String with path and message
+- FailWithFieldStringValidationType - FieldError\[String\] with validation type
+- FailWithFieldStringValidationMessage - FieldError\[String\] with validation message
+- FailWith.Builder - for building FailWith instances
+- FailWith.Mapped - for mapping one FailWith to another
 
-## ValidationModule
+## ValidationDsl
 
-Recommended place for FailWith instance is inside ValidationModule for default FailWith instances there is trait with instance name prefixed with Can that you can mix into your ValidationModule. For custom FailWith instances you can follow same practise.
+Recommended place for FailWith instance is inside ValidationDsl for default FailWith instances there is trait with instance name prefixed with Can that you can mix into your ValidationDsl. For custom FailWith instances you can follow same practise.
 
 ```scala
-object FutureValidation extends AccumulateVM[Future, ValidationMessage] with CanFailWithValidationMessage
+object FutureValidation extends AccumulateDsl[Future, ValidationMessage] with CanFailWithValidationMessage
 ```
 
 ## Definition
@@ -59,19 +61,20 @@ implicit object FailWithValidationType extends FailWith.Base[String] {
 ## Property specific
 
 Some sunny day you may find that you want to have custom logic for failing `Field[P]`.
-The same day you can define Propert type specific `FailWith*` instance:
+The same day you can define field type specific `FailWith*` instance:
 
 ```scala mdoc
-import jap.fields._
-import jap.fields.fail._
-import jap.fields.error._
+import fields._
+import fields.fail._
+import fields.error._
+import fields.value._
 
-object Validation extends DefaultAccumulateVM {
+object Validation extends FieldsDsl.accumulate {
   implicit object IntFailWith
       extends FailWithInvalid[ValidationError, Int]
       with FailWithEmpty[ValidationError, Int] {
-    def invalid[P >: Int](field: Field[P]): ValidationError = ValidationError.Message(field.path, "Invalid int")
-    def empty[P >: Int](field: Field[P]): ValidationError   = ValidationError.Message(field.path, "Empty int")
+    def invalid[P >: Int](path: FieldPath, value: P): ValidationError = ValidationError.Message(path, "Invalid int")
+    def empty[P >: Int](path: FieldPath, value: P): ValidationError   = ValidationError.Message(path, "Empty int")
   }
 }
 import Validation._

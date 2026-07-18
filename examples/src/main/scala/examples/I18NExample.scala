@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package jap.fields
 package examples
 package i18n
 
-import jap.fields.FieldPathConversions.*
-import jap.fields.ZIOInterop.*
-import jap.fields.*
-import jap.fields.error.*
-import jap.fields.fail.*
 import zio.*
-import zio.console.*
+import zio.Console.*
+
+import fields.*
+import fields.error.*
+import fields.fail.*
+import fields.value.FieldsDsl
+import FieldsInteropZIO.*
 
 import java.time.*
 
@@ -43,40 +43,40 @@ object TranslatedMessage {
   * this gives us opportunity to have freedom of how to translate it
   */
 final case class TranslatedError(path: FieldPath, error: String, message: TranslatedMessage)
-object TranslatedError   {
-  import TranslatedMessage._
+object TranslatedError {
+  import TranslatedMessage.*
   implicit object FailWithLocalisedError extends FailWith[TranslatedError, Nothing] {
-    def invalid[A](field: Field[A]): TranslatedError =
-      TranslatedError(field, ValidationTypes.Invalid, Key(ValidationTypes.Invalid))
+    def invalid[A](path: FieldPath, value: A): TranslatedError =
+      TranslatedError(path, ValidationTypes.Invalid, Key(ValidationTypes.Invalid))
 
-    def empty[A](field: Field[A]): TranslatedError =
-      TranslatedError(field, ValidationTypes.Empty, Key(ValidationTypes.Empty))
+    def empty[A](path: FieldPath, value: A): TranslatedError =
+      TranslatedError(path, ValidationTypes.Empty, Key(ValidationTypes.Empty))
 
-    def nonEmpty[A](field: Field[A]): TranslatedError =
-      TranslatedError(field, ValidationTypes.NonEmpty, Key(ValidationTypes.NonEmpty))
+    def nonEmpty[A](path: FieldPath, value: A): TranslatedError =
+      TranslatedError(path, ValidationTypes.NonEmpty, Key(ValidationTypes.NonEmpty))
 
-    def minSize[A](size: Int)(field: Field[A]): TranslatedError =
-      TranslatedError(field, ValidationTypes.MinSize, Sentence(Key(ValidationTypes.MinSize), Pure(size.toString)))
+    def minSize[A](size: Int)(path: FieldPath, value: A): TranslatedError =
+      TranslatedError(path, ValidationTypes.MinSize, Sentence(Key(ValidationTypes.MinSize), Pure(size.toString)))
 
-    def maxSize[A](size: Int)(field: Field[A]): TranslatedError =
-      TranslatedError(field, ValidationTypes.MaxSize, Sentence(Key(ValidationTypes.MaxSize), Pure(size.toString)))
+    def maxSize[A](size: Int)(path: FieldPath, value: A): TranslatedError =
+      TranslatedError(path, ValidationTypes.MaxSize, Sentence(Key(ValidationTypes.MaxSize), Pure(size.toString)))
 
-    def oneOf[A](variants: Seq[A])(field: Field[A]): TranslatedError =
+    def oneOf[A](variants: Seq[A])(path: FieldPath, value: A): TranslatedError =
       TranslatedError(
-        field,
+        path,
         ValidationTypes.MaxSize,
         Sentence(Key(ValidationTypes.OneOf), Pure(variants.mkString(","))),
       )
 
-    def message[A](error: String, message: Option[String])(field: Field[A]): TranslatedError =
-      TranslatedError(field, error, Key(message.getOrElse(error)))
+    def message[A](error: => String, message: => Option[String])(path: FieldPath, value: A): TranslatedError =
+      TranslatedError(path, error, Key(message.getOrElse(error)))
 
-    def compare[A](operation: CompareOperation, compared: String)(field: Field[A]): TranslatedError =
-      TranslatedError(field, operation.constraint, Sentence(Key(operation.constraint), Pure(compared)))
+    def compare[A](operation: CompareOperation, compared: String)(path: FieldPath, value: A): TranslatedError =
+      TranslatedError(path, operation.constraint, Sentence(Key(operation.constraint), Pure(compared)))
   }
 }
 
-object Validation extends AccumulateVM[Task, TranslatedError]
+object Validation extends FieldsDsl.BaseAccumulate[Task, TranslatedError]
 import Validation.*
 
 case class Post(
@@ -88,26 +88,22 @@ case class Post(
 )
 object Post {
   implicit val policy: Policy[Post] =
-    Policy
-      .builder[Post]
+    Policy[Post]
       .subRule(_.id)(
         _ > 0L,
-        _.ensure(_ != 4L, _.failMessage("NOT_4")),
+        _.assert(_ != 4L, _.failMessage("NOT_4")),
       )
       .subRule(_.title)(_.minSize(5), _.maxSize(10))
       .subRule(_.description)(_.some(_.all(_.minSize(5), _.maxSize(10))))
       .subRule(_.created, _.modified)(_ <= _)
-      .build
 }
 
 case class Blog(posts: List[Post], authorId: Long)
 object Blog {
   implicit val policy: Policy[Blog] =
-    Policy
-      .builder[Blog]
+    Policy[Blog]
       .subRule(_.authorId)(_ > 0L)
       .subRule(_.posts)(_.each(_.validate))
-      .build
 }
 
 sealed trait Locale
@@ -120,7 +116,7 @@ final case class I18N(locales: Map[Locale, Map[String, String]]) {
   def apply(key: String)(locale: Locale): String = locales(locale)(key)
 
   def translateAll(locale: Locale)(errors: List[TranslatedError]): Task[List[ValidationError.Message]] =
-    Task.collectAll(errors.map(translate(locale)))
+    ZIO.collectAll(errors.map(translate(locale)))
 
   def translate(locale: Locale)(error: TranslatedError): Task[ValidationError.Message] = {
     def translateMessage(msg: TranslatedMessage): String =
@@ -130,7 +126,7 @@ final case class I18N(locales: Map[Locale, Map[String, String]]) {
         case TranslatedMessage.Sentence(parts) => parts.map(translateMessage).mkString(" ")
       }
 
-    Task(
+    ZIO.from(
       ValidationError.Message(
         path = error.path,
         error = error.error,
@@ -141,27 +137,27 @@ final case class I18N(locales: Map[Locale, Map[String, String]]) {
 
 }
 
-object I18NExample extends zio.App {
+object I18NExample extends ZIOAppDefault {
   showBuildInfo()
 
   val i18n: I18N = I18N(
     Map(
       Locale.EN -> Map(
         "NOT_4"            -> "Cannot be equal to 4",
-        "GREATER_ERROR"    -> "Should be greater than",
-        "LESS_EQUAL_ERROR" -> "Should be less or equal to",
-        "MIN_SIZE_ERROR"   -> "Cannot have size less than",
+        "greater_error"    -> "Should be greater than",
+        "less_equal_error" -> "Should be less or equal to",
+        "min_size_error"   -> "Cannot have size less than",
       ),
       Locale.UA -> Map(
         "NOT_4"            -> "Не може дорівнювати 4",
-        "GREATER_ERROR"    -> "Має бути більше за",
-        "LESS_EQUAL_ERROR" -> "Має бути менше або дорівнювати",
-        "MIN_SIZE_ERROR"   -> "Не може мати розмір менший за",
+        "greater_error"    -> "Має бути більше за",
+        "less_equal_error" -> "Має бути менше або дорівнювати",
+        "min_size_error"   -> "Не може мати розмір менший за",
       ),
     )
   )
 
-  def run(args: List[String]): URIO[ZEnv, ExitCode] = {
+  def run: Task[Unit] = {
     val blog = Blog(
       List(
         Post(
@@ -175,12 +171,10 @@ object I18NExample extends zio.App {
       -1,
     )
 
-    (
-      for {
-        locale <- UIO(Locale.UA)
-        errors <- Field.from(blog).validate.errors.flatMap(i18n.translateAll(locale))
-        _      <- putStrLn(errors.mkString("\n"))
-      } yield ()
-    ).exitCode
+    for {
+      locale <- ZIO.from(Locale.UA)
+      errors <- Field.from(blog).validate.errors.flatMap(i18n.translateAll(locale))
+      _      <- printLine(errors.mkString("\n"))
+    } yield ()
   }
 }

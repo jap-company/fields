@@ -23,6 +23,16 @@ trait Effect[F[_]] {
 Predefined instances:
 
 - Anything that has `cats.Monad`/`cats.Defer` instances
-- `zio.ZIO[R, E, _]`
+- `zio.ZIO`
 - `scala.concurrent.Future`, requires `ExecutionContext`
 - `Effect.Sync` same as `cats.Id`
+
+
+## RunSync
+Typeclass for running `F[_]` effects synchronously used for circe interop
+
+```scala mdoc
+trait RunSync[F[_]] {
+  def run[A](effect: F[A]): A
+}
+```

@@ -1,0 +1,53 @@
+version: 2
+updates:
+  - package-ecosystem: sbt
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - scala
+    open-pull-requests-limit: 5
+    groups:
+      scala-patch-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - patch
+
+  - package-ecosystem: npm
+    directory: "/website"
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - website
+    open-pull-requests-limit: 5
+    groups:
+      docusaurus:
+        patterns:
+          - "@docusaurus/*"
+      npm-patch-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - ci
+    open-pull-requests-limit: 5
+    groups:
+      action-minor-and-patch-updates:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch

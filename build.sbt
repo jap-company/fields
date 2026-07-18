@@ -1,15 +1,17 @@
-import BuildHelper._
-import com.typesafe.sbt.SbtGit.GitKeys._
+import BuildHelper.*
+import org.typelevel.scalacoptions.ScalacOptions
+import sbtbuildinfo.BuildInfoKey
+import sbtbuildinfo.BuildInfoKeys.{buildInfoKeys, buildInfoPackage}
 
-ThisBuild / organization           := "company.jap"
-ThisBuild / organizationName       := "Jap"
-ThisBuild / idePackagePrefix       := Some("jap.fields")
-ThisBuild / startYear              := Some(2022)
-ThisBuild / homepage               := Some(url("https://github.com/jap-company/fields"))
-ThisBuild / licenses               := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.txt"))
-ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
-ThisBuild / sonatypeRepository     := "https://s01.oss.sonatype.org/service/local"
-ThisBuild / developers             :=
+import scala.sys.process.*
+
+organization     := "io.github.0lejk4"
+organizationName := "Jap"
+idePackagePrefix := Some("fields")
+startYear        := Some(2022)
+homepage         := Some(url("https://github.com/jap-company/fields"))
+licenses         := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.txt"))
+developers       :=
   List(
     Developer(
       "0lejk4",
@@ -19,32 +21,20 @@ ThisBuild / developers             :=
     )
   )
 
-lazy val V      = new {
-  val Cats     = "2.8.0"
-  val Zio      = "1.0.15"
-  val Scala3   = "3.1.2"
-  val Scala213 = "2.13.8"
-  val Scala212 = "2.12.16"
-  val MUnit    = "0.7.29"
-  val Circe    = "0.14.2"
-}
-val editorScala = V.Scala3
-
-lazy val modules: Seq[ProjectReference] = List(`fields-core`, `fields-cats`, `fields-zio`)
-
-lazy val root = (project in file("."))
-  .aggregate(modules: _*)
-  .aggregate(examples)
-  .settings(
-    name            := "fields",
-    scalaVersion    := editorScala,
-    publishArtifact := false,
-  )
+//val editorScala = V.Scala213
+val editorScala            = V.Scala3
+val supportedScalaVersions = List(V.Scala212, V.Scala213, V.Scala3)
+ThisBuild / scalaVersion := editorScala
 
 lazy val scalaSettings = Seq(
-  scalaVersion           := editorScala,
-  crossScalaVersions     := List(V.Scala212, V.Scala213, V.Scala3),
-  tpolecatExcludeOptions := Set(ScalacOptions.privateKindProjector),
+  Compile / doc / scalacOptions += "-no-link-warnings",
+  tpolecatExcludeOptions := Set(
+    ScalacOptions.privateKindProjector,
+    ScalacOptions.privateWarnUnusedNoWarn,
+    ScalacOptions.lintInferAny,
+    ScalacOptions.warnValueDiscard,
+    ScalacOptions.privateWarnValueDiscard,
+  ),
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((3, _)) => Seq("-Ykind-projector:underscores")
@@ -53,7 +43,7 @@ lazy val scalaSettings = Seq(
   },
   libraryDependencies ++= (
     if (scalaVersion.value == V.Scala3) List()
-    else List(compilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full))
+    else List(compilerPlugin(("org.typelevel" % "kind-projector" % V.KindProjector).cross(CrossVersion.full)))
   ),
 )
 
@@ -62,30 +52,46 @@ lazy val commonSettings = Seq(
 ) ++ scalaSettings
 
 lazy val `fields-core` =
-  (project in file("modules/core"))
+  (projectMatrix in file("modules/core"))
     .settings(
       commonSettings,
-      buildInfoSettings("jap.fields"),
+      buildInfoPackage := "fields",
+      buildInfoKeys    := Seq[BuildInfoKey](organization, moduleName, name, version, scalaVersion, isSnapshot),
+      libraryDependencies += "io.circe" %% "circe-core" % V.Circe % Optional,
       libraryDependencies ++= {
         scalaVersion.value match {
           case V.Scala3 => Nil
           case _        => List("org.scala-lang" % "scala-reflect" % scalaVersion.value)
         }
       },
-      libraryDependencies += "io.circe" %% "circe-core" % V.Circe % Optional,
     )
     .enablePlugins(BuildInfoPlugin)
+    .jvmPlatform(scalaVersions = supportedScalaVersions)
+
+lazy val `fields-lens` =
+  (projectMatrix in file("modules/lens"))
+    .settings(commonSettings)
+    .dependsOn(`fields-core`)
+    .jvmPlatform(scalaVersions = supportedScalaVersions)
+
+lazy val `fields-value` =
+  (projectMatrix in file("modules/value"))
+    .settings(commonSettings)
+    .dependsOn(`fields-core`)
+    .jvmPlatform(scalaVersions = supportedScalaVersions)
 
 lazy val `fields-cats` =
-  (project in file("modules/cats"))
+  (projectMatrix in file("modules/cats"))
     .settings(
       commonSettings,
       libraryDependencies += "org.typelevel" %% "cats-core" % V.Cats,
     )
     .dependsOn(`fields-core`)
+    .dependsOn(`fields-lens` % Test, `fields-value` % Test)
+    .jvmPlatform(scalaVersions = supportedScalaVersions)
 
 lazy val `fields-zio` =
-  (project in file("modules/zio"))
+  (projectMatrix in file("modules/zio"))
     .settings(
       commonSettings,
       libraryDependencies ++= Seq(
@@ -96,38 +102,110 @@ lazy val `fields-zio` =
       testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
     )
     .dependsOn(`fields-core`)
+    .dependsOn(`fields-lens` % Test, `fields-value` % Test)
+    .jvmPlatform(scalaVersions = supportedScalaVersions)
+
+lazy val `fields-zio-blocks-schema` =
+  (projectMatrix in file("modules/zio-blocks-schema"))
+    .settings(
+      commonSettings,
+      libraryDependencies += "dev.zio" %% "zio-blocks-schema" % V.ZioBlocks,
+    )
+    .dependsOn(`fields-core`, `fields-value` % Test, `fields-lens` % Test)
+    .jvmPlatform(scalaVersions = List(V.Scala213, V.Scala3))
 
 lazy val examples =
   (project in file("examples"))
     .settings(
       scalaSettings,
+      scalaVersion                           := editorScala,
+      idePackagePrefix                       := None,
       crossScalaVersions                     := Nil,
       publishArtifact                        := false,
-      libraryDependencies += "org.typelevel" %% "cats-effect" % "2.5.5",
+      publish / skip                         := true,
+      libraryDependencies += "org.typelevel" %% "cats-effect" % V.CatsEffect,
       libraryDependencies += "io.circe"      %% "circe-core"  % V.Circe,
     )
-    .dependsOn(`fields-core`, `fields-zio`, `fields-cats`)
+    .dependsOn(
+      `fields-core`.jvm(editorScala),
+      `fields-value`.jvm(editorScala),
+      `fields-lens`.jvm(editorScala),
+      `fields-zio`.jvm(editorScala),
+      `fields-cats`.jvm(editorScala),
+    )
+
+lazy val benchmarks =
+  (projectMatrix in file("benchmarks"))
+    .enablePlugins(JmhPlugin)
+    .settings(
+      scalaSettings,
+      idePackagePrefix                           := None,
+      publishArtifact                            := false,
+      publish / skip                             := true,
+      libraryDependencies += "org.typelevel"     %% "cats-effect"      % V.CatsEffect,
+      libraryDependencies += "dev.zio"           %% "zio-interop-cats" % V.ZioInteropCats,
+      libraryDependencies += "io.circe"          %% "circe-core"       % V.Circe,
+      libraryDependencies += "com.github.yakivy" %% "dupin-core"       % "0.6.1",
+      libraryDependencies ++=
+        (if (scalaVersion.value == V.Scala3) Nil
+         else
+           List(
+             "com.github.krzemin" %% "octopus"      % "0.4.1",
+             "com.github.krzemin" %% "octopus-cats" % "0.4.1",
+           )),
+    )
+    .dependsOn(`fields-core`, `fields-value`, `fields-lens`, `fields-zio`, `fields-cats`)
+    .jvmPlatform(scalaVersions = List(editorScala))
+
+lazy val modules: Seq[ProjectMatrix] =
+  List(
+    `fields-core`,
+    `fields-lens`,
+    `fields-value`,
+    `fields-cats`,
+    `fields-zio`,
+    `fields-zio-blocks-schema`,
+    benchmarks,
+  )
+
+lazy val root = (project in file("."))
+  .aggregate(modules.flatMap(_.projectRefs) *)
+  .aggregate(examples)
+  .settings(
+    name               := "fields",
+    scalaVersion       := editorScala,
+    crossScalaVersions := Seq(),
+    publishArtifact    := false,
+    publish / skip     := true,
+  )
 
 val updateDocsVariables = taskKey[Unit]("Update docs variables")
-lazy val `fields-docs`  =
+val websiteBuild        = taskKey[Unit]("Build the production documentation website")
+
+lazy val `fields-docs` =
   project
     .settings(scalaSettings)
-    .settings(crossScalaVersions := Nil)
+    .settings(scalaVersion := editorScala, crossScalaVersions := Nil)
     .settings(
-      moduleName                                 := "fields-docs",
-      mdocVariables                              := Map(
-        "version"              -> latestVersion.value,
-        "organization"         -> (LocalRootProject / organization).value,
-        "coreModuleName"       -> (`fields-core` / moduleName).value,
-        "zioModuleName"        -> (`fields-zio` / moduleName).value,
-        "catsModuleName"       -> (`fields-cats` / moduleName).value,
-        "scalaPublishVersions" -> {
-          val minorVersions = (`fields-core` / crossScalaVersions).value.map(CrossVersion.binaryScalaVersion(_))
+      moduleName                       := "fields-docs",
+      libraryDependencies += "dev.zio" %% "zio-blocks-schema" % V.ZioBlocks,
+      mdocOut                          := (LocalRootProject / baseDirectory).value / "website" / "generated-docs",
+      mdocVariables                    := Map(
+        "version"                   -> latestVersion.value,
+        "organization"              -> (LocalRootProject / organization).value,
+        "coreModuleName"            -> (`fields-core`.jvm(editorScala) / moduleName).value,
+        "zioModuleName"             -> (`fields-zio`.jvm(editorScala) / moduleName).value,
+        "zioBlocksSchemaModuleName" -> (`fields-zio-blocks-schema`.jvm(editorScala) / moduleName).value,
+        "catsModuleName"            -> (`fields-cats`.jvm(editorScala) / moduleName).value,
+        "lensModuleName"            -> (`fields-lens`.jvm(editorScala) / moduleName).value,
+        "valueModuleName"           -> (`fields-value`.jvm(editorScala) / moduleName).value,
+        "scalaPublishVersions"      -> {
+          val minorVersions = supportedScalaVersions.map(CrossVersion.binaryScalaVersion)
           if (minorVersions.size <= 2) minorVersions.mkString(" and ")
           else minorVersions.init.mkString(", ") ++ " and " ++ minorVersions.last
         },
       ),
-      updateDocsVariables                        := {
+      updateDocsVariables              := {
         val file = (LocalRootProject / baseDirectory).value / "website" / "variables.js"
 
         val fileHeader =
@@ -141,15 +219,27 @@ lazy val `fields-docs`  =
 
         IO.write(file, fileContents)
       },
-      publishArtifact                            := false,
-      ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(`fields-core`, `fields-cats`, `fields-zio`),
-      ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
+      publishArtifact                  := false,
+      publish / skip                   := true,
+      ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(
+        `fields-core`.jvm(editorScala),
+        `fields-cats`.jvm(editorScala),
+        `fields-zio`.jvm(editorScala),
+        `fields-zio-blocks-schema`.jvm(editorScala),
+        `fields-value`.jvm(editorScala),
+        `fields-lens`.jvm(editorScala),
+      ),
+      ScalaUnidoc / unidoc / target     := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
       cleanFiles += (ScalaUnidoc / unidoc / target).value,
-      docusaurusCreateSite     := docusaurusCreateSite.dependsOn(Compile / unidoc).dependsOn(updateDocsVariables).value,
-      docusaurusPublishGhpages := docusaurusPublishGhpages
-        .dependsOn(Compile / unidoc)
-        .dependsOn(updateDocsVariables)
-        .value,
+      docusaurusCreateSite              := Def.uncached(
+        docusaurusCreateSite.dependsOn(Compile / unidoc).dependsOn(updateDocsVariables).value
+      ),
+      docusaurusPublishGhpages          := Def.uncached(
+        docusaurusPublishGhpages
+          .dependsOn(Compile / unidoc)
+          .dependsOn(updateDocsVariables)
+          .value
+      ),
        // format: off
        ScalaUnidoc / unidoc / scalacOptions ++= Seq(
          "-doc-source-url", s"https://github.com/jap-company/fields/tree/v${latestVersion.value}€{FILE_PATH}.scala",
@@ -161,8 +251,25 @@ lazy val `fields-docs`  =
        // format: on
       libraryDependencies += "io.circe" %% "circe-core" % V.Circe,
     )
-    .dependsOn(`fields-core`, `fields-cats`, `fields-zio`)
+    .dependsOn(
+      `fields-core`.jvm(editorScala),
+      `fields-cats`.jvm(editorScala),
+      `fields-zio`.jvm(editorScala),
+      `fields-zio-blocks-schema`.jvm(editorScala),
+      `fields-lens`.jvm(editorScala),
+      `fields-value`.jvm(editorScala),
+    )
     .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+    .disablePlugins(TpolecatPlugin)
+
+root / websiteBuild := {
+  (`fields-docs` / updateDocsVariables).value
+  val website = (LocalRootProject / baseDirectory).value / "website"
+  val install = Process(Seq("npm", "ci", "--ignore-scripts"), website).!
+  if (install != 0) sys.error("npm ci failed")
+  val build   = Process(Seq("npm", "run", "build"), website).!
+  if (build != 0) sys.error("website build failed")
+}
 
 val latestVersion = settingKey[String]("Latest stable released version")
 ThisBuild / latestVersion := {
@@ -176,17 +283,16 @@ ThisBuild / latestVersion := {
 Global / excludeLintKeys ++= Set(ThisBuild / idePackagePrefix)
 
 //Github Workflow
-ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
+ThisBuild / githubWorkflowTargetTags            := Seq("v*")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(RefPredicate.StartsWith(Ref.Tag("v")))
-ThisBuild / githubWorkflowJavaVersions          := Seq(JavaSpec.temurin("8"))
+ThisBuild / githubWorkflowJavaVersions          := Seq(JavaSpec.temurin("17"))
 ThisBuild / githubWorkflowArtifactUpload        := false
 ThisBuild / githubWorkflowScalaVersions         := List(V.Scala3)
 ThisBuild / githubWorkflowBuild                 := Seq(
-  WorkflowStep.Sbt(List("ci")),
-  WorkflowStep.Sbt(List("fields-docs/mdoc"), cond = Some(s"matrix.scala == '$editorScala'")),
+  WorkflowStep.Sbt(List("ci"))
 )
 
-ThisBuild / githubWorkflowPublish               := Seq(
+ThisBuild / githubWorkflowPublish := Seq(
   WorkflowStep.Sbt(
     List("ci-release", "fields-docs/docusaurusPublishGhpages"),
     env = Map(
@@ -203,5 +309,23 @@ def addCommandsAlias(name: String, commands: List[String]) = addCommandAlias(nam
 
 addCommandsAlias(
   "ci",
-  List("clean", "test", "scalafmtCheck", "scalafmtSbtCheck", "headerCheck", "doc"),
+  List(
+    "testFull",
+    "scalafmtCheck",
+    "scalafmtSbtCheck",
+    "headerCheck",
+    "fields-docs/mdoc",
+    "doc",
+    "root/websiteBuild",
+  ),
+)
+
+addCommandsAlias(
+  "ciFast",
+  List("test", "scalafmtCheck", "scalafmtSbtCheck", "headerCheck"),
+)
+
+addCommandsAlias(
+  "releaseCheck",
+  List("ci", "publishLocal", "githubWorkflowCheck"),
 )

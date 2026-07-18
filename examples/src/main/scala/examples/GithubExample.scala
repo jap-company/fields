@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-package jap.fields
 package examples
 package github
 
-import jap.fields._
+import fields.error.*
+import fields.value.FieldsDsl
 
-import zio._
+import zio.*
+import fields.FieldsInteropZIO.*
 
-object Validation {
-  import jap.fields.error._
-  import jap.fields.fail._
-  import jap.fields.ZIOInterop._
-  object all extends AccumulateVM[Task, ValidationError] with CanFailWithValidationError
-}
-import Validation.all.*
+object GithubValidationDsl extends FieldsDsl.BaseAccumulate[Task, ValidationError]
+import GithubValidationDsl.*
 
 case class AddStarCmd(
     organization: String,
@@ -40,16 +36,14 @@ object AddStarCmd {
 
   /** Default policy that does not have any dependencies */
   implicit val policy: Policy[AddStarCmd] =
-    Policy
-      .builder[AddStarCmd]
+    Policy[AddStarCmd]
       .subRule(_.organization)(_.minSize(2))
       .subRule(_.project)(_.minSize(2))
       .subRule(_.user)(_.minSize(2))
-      .build
 
   /** Extracted for convenience */
-  def checkNotStarredRule(userF: Field[String])(project: Project): MRule =
-    userF.ensure(
+  def checkNotStarredRule(userF: Field[String])(project: Project): Rule =
+    userF.assert(
       !project.stargazers.contains(_),
       _.failMessage("user-already-starred-project"),
     )
@@ -62,9 +56,10 @@ object AddStarCmd {
 
     // Declare Rule`s
     val organizationRule =
-      organizationF.ensureF(api.findOrganization(_).map(_.isDefined), _.failMessage("organization-does-not-exist"))
+      organizationF.assertF(api.findOrganization(_).map(_.isDefined), _.failMessage("organization-does-not-exist"))
 
-    val projectDontExist = MRule.pure(V.traverse(organizationF, projectF)(_.failMessage("project-does-not-exist")))
+    val projectDontExist =
+      Rule.pure(Rule.V.traverse(organizationF, projectF)(_.failMessage("project-does-not-exist").invalid))
 
     /** We use Rule.apply cause we sure this is lazy */
     val projectRule = Rule.flatten {
@@ -73,7 +68,7 @@ object AddStarCmd {
         .map(_.fold(projectDontExist)(checkNotStarredRule(userF)))
     }
 
-    cmdF.validate &&                        // Call validate to use base validations
+    cmdF.validate && // Call validate to use base validations
     organizationRule.whenValid(projectRule) // Make sure we only apply projectRule if organization exists
   }
 }
@@ -91,17 +86,17 @@ trait GithubApi {
   def findProject(organization: String, name: String): Task[Option[Project]]
 }
 
-object GithubExample extends zio.App {
+object GithubExample extends ZIOAppDefault {
   showBuildInfo()
 
   val api: GithubApi = new GithubApi {
     val organizations = Map("jap-company" -> Organization("jap-company"))
     val projects      = Map(("jap-company", "fields") -> Project("jap-company", "fields", List("0lejk4")))
     def findOrganization(organization: String): Task[Option[Organization]] =
-      Task(organizations.get(organization))
+      ZIO.succeed(organizations.get(organization))
 
     def findProject(organization: String, name: String): Task[Option[Project]] =
-      Task(projects.get((organization, name)))
+      ZIO.succeed(projects.get((organization, name)))
   }
 
   implicit val policy: Policy[AddStarCmd] = AddStarCmd.policy(api)
@@ -118,5 +113,5 @@ object GithubExample extends zio.App {
     } yield ()
   }
 
-  def run(args: List[String]): URIO[ZEnv, ExitCode] = program.exitCode
+  def run = program
 }

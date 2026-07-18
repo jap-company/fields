@@ -23,24 +23,22 @@ libraryDependencies ++= List(
 ## Code teaser
 
 ```scala mdoc
-import jap.fields._
-import jap.fields.DefaultAccumulateVM._
+import fields._
+import fields.value.FieldsDsl.default._
 
 case class User(username: String, password: String, passwordRepeat: Option[String])
 case class UserFeatures(standsWithUkraine: Boolean)
 case class Request(user: User, features: UserFeatures)
 object Request {
   implicit val policy: Policy[Request] =
-    Policy
-      .builder[Request]
+    Policy[Request]
       .subRule(_.user.username)(_.nonBlank, _.minSize(4))
       .subRule(_.user.password)(_.nonBlank, _.minSize(8), _.maxSize(30))
       .subRule(_.user.password, _.user.passwordRepeat)((p, pr) => pr.some(_ === p))
       .rule { request =>
         val standsWithUkraineF = request.sub(_.features.standsWithUkraine)
-        standsWithUkraineF.ensure(_ == true, _.failMessage("https://github.com/vshymanskyy/StandWithUkraine/blob/main/docs/README.md"))
+        standsWithUkraineF.assert(_ == true, _.failMessage("https://github.com/vshymanskyy/StandWithUkraine/blob/main/docs/README.md"))
       }
-      .build
 }
 
 val request  = Request(User("Ann", "1234", Some("")), UserFeatures(false))
@@ -61,7 +59,7 @@ Please open new [Github Issue](https://github.com/jap-company/fields/issues/new)
 
 Development and maintenance of Fields is sponsored by [Jap](http://jap.company)
 
-[![](https://raw.githubusercontent.com/jap-company/fields/master/assets/jap-logo.png "Jap")](http://jap.company)
+[![](https://raw.githubusercontent.com/jap-company/fields/master/assets/jap-logo.png 'Jap')](http://jap.company)
 
 ## License
 

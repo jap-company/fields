@@ -54,13 +54,22 @@ def validateUsername(username: Field[String])(implicit userService: UserService)
 
 # [Learn More on the Fields Microsite](https://jap-company.github.io/fields)
 
+## v1 modules
+
+Fields v1 provides two validation front ends on the same core semantics:
+
+- `fields-value` for direct value and path validation.
+- `fields-lens` for reusable lens-based policies.
+
+Optional `fields-cats`, `fields-zio`, and `fields-zio-blocks-schema` modules integrate effect, validation, and schema types. See the [project documentation](https://jap-company.github.io/fields/docs/modules) for the current module model.
+
 [link-scaladex]: https://index.scala-lang.org/jap-company/fields/fields-core "Scaladex"
-[link-maven]: https://maven-badges.herokuapp.com/maven-central/company.jap/fields-core_2.13 "Maven"
+[link-maven]: https://maven-badges.herokuapp.com/maven-central/io.github.0lejk4/fields-core_3 "Maven"
 [link-ci]: https://github.com/jap-company/fields/actions?query=workflow%3A%22CI%22 "CI"
 [link-scala-ukraine]: https://github.com/scala-ukraine/knowledge-base "Scala Ukraine"
 [link-scaladoc]: https://jap-company.github.io/fields/api "Scaladoc"
 [badge-ci]: https://github.com/jap-company/fields/workflows/CI/badge.svg "CI"
-[badge-maven]: https://maven-badges.herokuapp.com/maven-central/company.jap/fields-core_2.13/badge.svg "Maven"
+[badge-maven]: https://maven-badges.herokuapp.com/maven-central/io.github.0lejk4/fields-core_3/badge.svg "Maven"
 [badge-scaladex]: https://index.scala-lang.org/jap-company/fields/fields-core/latest-by-scala-version.svg?platform=jvm "Scaladex"
 [badge-scala-ukraine]: https://img.shields.io/badge/Scala-Ukraine-EBD038?labelColor=4172CC "Scala Ukraine"
 [badge-scaladoc]: https://img.shields.io/badge/scaladoc-read-brightgreen "Scaladoc"

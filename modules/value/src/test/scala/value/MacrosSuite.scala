@@ -1,0 +1,71 @@
+package fields
+package value
+
+import defaultDsl.{Field => _, _}
+
+class MacrosSuite extends munit.FunSuite {
+  test("Field.from") {
+    val data = TestData()
+    assertEquals(Field.from(data), Field(FieldPath.parse("data"), data))
+    assertEquals(Field.from(data.nested), Field(FieldPath.parse("data.nested"), data.nested))
+    assertEquals(
+      Field.from(data.nested.deep),
+      Field(FieldPath.from(data.nested.deep), data.nested.deep),
+    )
+  }
+
+  test("Field.sub") {
+    val data = TestData()
+    assertEquals(Field.sub(data), Field(FieldPath.Root, data))
+    assertEquals(Field.sub(data.nested), Field(FieldPath.fromPath("nested"), data.nested))
+    assertEquals(
+      Field.sub(data.nested.deep),
+      Field(FieldPath.sub(data.nested.deep), data.nested.deep),
+    )
+  }
+
+  test("Field#sub") {
+    val data     = TestData()
+    val dataF    = Field(data)
+    val nestedF  = dataF.sub(_.nested)
+    val deepF    = dataF.sub(_.nested.deep)
+    val deepIntF = dataF.sub(_.nested.deep.int)
+
+    assertEquals(nestedF, Field(FieldPath.parse("nested"), data.nested))
+
+    assertEquals(deepF, Field(FieldPath.parse("nested.deep"), data.nested.deep))
+    assertEquals(deepF, nestedF.sub(_.deep))
+
+    assertEquals(deepIntF, Field(FieldPath.parse("nested.deep.int"), data.nested.deep.int))
+    assertEquals(deepIntF, nestedF.sub(_.deep.int))
+    assertEquals(deepIntF, deepF.sub(_.int))
+  }
+
+  test("Policy.subRule") {
+    implicit val policy: Policy[TestData] =
+      Policy[TestData]
+        .subRule(_.string)(_.nonEmpty)
+
+    val data    = TestData()
+    val dataF   = Field(data)
+    val stringF = dataF.sub(_.string)
+
+    assertEquals(
+      policy(dataF).errors,
+      stringF.failNonEmpty :: Nil,
+    )
+  }
+  test("Policy.subRule2") {
+    implicit val policy: Policy[TestData] =
+      Policy[TestData]
+        .subRule(_.int, _.nested.deep.int)(_ !== _)
+
+    val data  = TestData(int = 1, nested = NestedTestData(DeepTestData(1)))
+    val dataF = Field.from(data)
+
+    assertEquals(
+      dataF.validate.errors,
+      dataF.sub(_.int).failNotEqual(dataF.sub(_.nested.deep.int)) :: Nil,
+    )
+  }
+}

@@ -1,0 +1,47 @@
+# Field
+
+Library is called Fields solely because it is built around `Field` data type.
+
+`Field[P]` has _path_ of type `FieldPath` and _value_ of type `P`.
+
+All validations are defined throught syntax available for `Field`
+
+## Syntax
+
+### Create
+
+```scala mdoc:width=100
+import fields.value.FieldsDsl.default._
+
+case class Request(name: String)
+val request = Request("Ann")
+Field(request.name)
+Field(FieldPath.parse("request.name"),request.name)
+Field.from(request.name)
+Field.sub(request.name)
+```
+
+### Transform
+
+```scala mdoc:width=100
+case class B()
+case class A(b: B)
+val a = Field(FieldPath.fromPath("a"), A(B()))
+a.sub(_.b)
+a.down("b", a.value.b)
+a.downS("b", _.b)
+a.map(_.b)
+a.mapPath(_ + "A")
+a.named("A")
+a.withPath(FieldPath.fromPath("b"))
+a.withValue(3)
+```
+
+### Special
+
+```scala mdoc:width=100
+
+Field(1 -> "2").first
+Field(1 -> "2").second
+Field(Option(1)).option
+```

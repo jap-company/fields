@@ -8,7 +8,7 @@ object BuildHelper {
     val Scala3         = "3.3.8"
     val Scala213       = "2.13.18"
     val Scala212       = "2.12.21"
-    val MUnit          = "1.3.4"
+    val MUnit          = "1.3.5"
     val Circe          = "0.14.16"
     val KindProjector  = "0.13.4"
   }
